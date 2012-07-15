@@ -1,0 +1,23 @@
+This is an alternative to the existing Kafka PHP Client which is in the incubator,
+the main motivation to write this alternative was that it seemed important
+that the fetch requests are not loaded entirely into memory but
+pulled continuously from the socket as the fact that php request has a different control flow
+and communication pattern (each request is a thread within http server)
+so the api doesn't need to follow the scala/java object graph and can be much simpler.
+ 
+There are few differences to the existing Kafka PHP client: 
+- streaming message individually rather than loading the whole response into memory
+- offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
+- flushing payload into the file to use gzopen function to enabled decompression (PHP gzdecode missing)
+- TopicFilter abstract
+- crc32 check working
+- 
+
+Try the cli example />php ./scripts/consumer.php 
+
+
+TODO ProducerRequest
+TODO process and act upon the errorCode after reading the response header
+TODO maxSzize check when fetching and throw Kafka_Exception when overflown
+TODO Snappy compression
+TODO create Kafka class to hold connection properties but no actual socket (maybe put key constants there too)

@@ -113,23 +113,68 @@ class Kafka_Message
 				}
 				break;
 			case 1:
-				//gzipped, need to hack around missing gzdecode function
-				$tempfile = tempnam(sys_get_temp_dir(), 'kafka_payload_');
-				$zp = fopen($tempfile, "w");
-				stream_copy_to_stream($connection, $zp, $payloadSize);
-				fclose($zp);
-				//validate the raw payload
-				if (hash_file( 'crc32b', $tempfile) != dechex($crc32))
+			    //gzip header
+			    $gzHeader = fread($connection, 10); //[0]magic, [2]method, [3]flags, [4]unix ts, [8]xflg, [9]ostype
+			    $gzmethod = ord($gzHeader[2]);
+			    $gzflags = ord($gzHeader[3]);
+			    $payloadSize -=10;
+			    //TODO process the gzflags and read extra fields if necessary
+			    if ($gzflags & 1) // FTEXT
+			    {
+			        //
+			    }
+			    if ($gzflags & 2) // FHCRC
+			    {
+			        //
+			    }
+			    if ($gzflags & 4) // FEXTRA
+			    {
+			        //
+			    }
+			    if ($gzflags & 8) // FNAME
+			    {
+			        //
+			    }
+			    if ($gzflags & 16) // FCOMMENT
+			    {
+			        //
+			    }
+			    //gzip compressed blocks
+			    $gzData = fread($connection, $payloadSize);
+			    //validate the payload
+		        if (crc32($gzHeader . $gzData) != $crc32)
 				{
 				    throw new Kafka_Exception("Invalid message CRC32");
 				}
-				//now uncompress
-				$zp = gzopen($tempfile, "rb");
-				//skip size and checksum (gzread ignores them) 
-				fread($zp, 10);
-				$payload = gzread($zp, $payloadSize - 10);
-				fclose($zp);
-				unlink($tempfile);
+				//uncompress now depending on the method flag
+			    switch($gzmethod)
+			    {
+			        case 0: //copy
+			            $payload = &$gzData;
+			        case 1: //compress
+			            //TODO have not tested compress method
+			            $payload = gzuncompress($gzData);
+		            case 2: //pack
+		                throw new Kafka_Exception(
+			                "GZip method unsupported: $gzmethod pack"
+		                );
+	                break;
+		                case 3: //lhz
+		                throw new Kafka_Exception(
+			                "GZip method unsupported: $gzmethod lhz"
+		                );
+	                break;
+        	        case 8: //deflate
+        	            //FIXME no idea where the extra 10-bytes come from after inflating 
+        	            //but that's what i get when pulling messages produced by kakfa-console-producer.sh 
+			            $payload = substr(gzinflate($gzData), 10);
+		            break;
+			        default :
+			            throw new Kafka_Exception(
+			                "Unknown GZip method : $gzmethod"
+			            );
+			        break;
+			    }
 				break;
 			case 2:
 				throw new Kafka_Exception("Snappy compression not implemented");

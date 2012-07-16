@@ -140,9 +140,10 @@ class Kafka_Message
 			        //
 			    }
 			    //gzip compressed blocks
-			    $gzData = fread($connection, $payloadSize);
+			    $gzData = fread($connection, $payloadSize - 8);
+			    $gzFooter = fread($connection, 8);
 			    //validate the payload
-		        if (crc32($gzHeader . $gzData) != $crc32)
+		        if (crc32($gzHeader . $gzData . $gzFooter ) != $crc32)
 				{
 				    throw new Kafka_Exception("Invalid message CRC32");
 				}
@@ -165,9 +166,7 @@ class Kafka_Message
 		                );
 	                break;
         	        case 8: //deflate
-        	            //FIXME no idea where the extra 10-bytes come from after inflating 
-        	            //but that's what i get when pulling messages produced by kakfa-console-producer.sh 
-			            $payload = substr(gzinflate($gzData), 10);
+			            $payload = gzinflate($gzData);
 		            break;
 			        default :
 			            throw new Kafka_Exception(
@@ -175,7 +174,19 @@ class Kafka_Message
 			            );
 			        break;
 			    }
-				break;
+			    //validate gzip data based on the gzipt footer 
+			    $datacrc = array_shift(unpack("V",substr($gzFooter, 0, 4)));
+			    $datasize = array_shift(unpack("V",substr($gzFooter, 4, 4)));
+			    if (strlen($payload) != $datasize || crc32($payload) != $datacrc)
+			    {
+			        throw new Kafka_Exception(
+		                "Invalid size or crc of the gzip uncompressed data"
+			        );
+			    }
+			    //FIXME no idea where the extra 10-bytes come from after inflating
+			    //but that's what i get when pulling messages produced by kakfa-console-producer.sh
+			    $payload = substr($payload, 10);
+			break;
 			case 2:
 				throw new Kafka_Exception("Snappy compression not implemented");
 				break;

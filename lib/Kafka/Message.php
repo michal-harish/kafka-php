@@ -39,10 +39,6 @@ class Kafka_Message
 		$this->size = $size;
 		$this->crc32 = $crc32;
 		$this->payload = $payload;	
-		if (!$this->isValid())
-		{
-			throw new Kafka_Exception("Invalid message CRC32");			
-		}	
 	}
 	
 	/**
@@ -74,49 +70,25 @@ class Kafka_Message
 	}
 	
 	/**
-	 * Internal validator used by the constructor - could be public but then
-	 * would be better to add check whether the validation has been done already.
-	 * @throws Kafka_Exception
-	 */
-	private function isValid()
-	{
-		switch($this->compression)
-		{
-			case 0:
-				$rawPayload = &$this->payload;
-				break;
-			case 1:
-				$rawPayload = gzencode($this->payload);
-				break;
-			case 2:
-				throw new Kafka_Exception("Snappy compression not implemented");
-				break;
-			default:
-				throw new Kafka_Exception("Unknown kafka compression $compression");
-				break;
-		}
-		return crc32($rawPayload) == $this->crc32;
-	}
-
-	/**
 	* Creates an instance of a Message from a response stream.
 	* @param resource $connection
 	*/
 	public static function createFromStream($connection, $offset)
 	{
 		$size = array_shift(unpack('N', fread($connection, 4)));
-		//read magic
-		$magic = array_shift(unpack('C', fread($connection, 1)));
-		//adapt to z wire format
-		switch($magic)
+		
+		//read magic and load relevant attributes
+		switch($magic = array_shift(unpack('C', fread($connection, 1))))
 		{
 			case 0:
 				//no compression attribute
 				$compression = 0;
+				$payloadSize = $size - 5;
 				break;
 			case 1:
 				//read compression attribute
 				$compression = array_shift(unpack('C', fread($connection, 1)));
+				$payloadSize = $size - 6;
 				break;
 			default:
 				throw new Kafka_Exception(
@@ -124,25 +96,40 @@ class Kafka_Message
 			);
 			break;
 		}
+		
 		//read crc
 		$crc32 = array_shift(unpack('N', fread($connection, 4)));
+
 		//load payload depending on type of the compression
 		switch($compression)
 		{
 			case 0:
 				//message not compressed, read directly from the connection
-				$payload = fread($connection, $size - 6);
+				$payload = fread($connection, $payloadSize);
+				//validate the raw payload
+				if (crc32($payload) != $crc32)
+				{
+				    throw new Kafka_Exception("Invalid message CRC32");
+				}
 				break;
 			case 1:
 				//gzipped, need to hack around missing gzdecode function
 				$tempfile = tempnam(sys_get_temp_dir(), 'kafka_payload_');
-				$zp = fopen($tempname, "w");
-				stream_copy_to_stream($connection, $zp, $size-6);
+				$zp = fopen($tempfile, "w");
+				stream_copy_to_stream($connection, $zp, $payloadSize);
 				fclose($zp);
-				$zp = gzopen($tempfile, "r");
-				$payload = gzread($zp);
+				//validate the raw payload
+				if (hash_file( 'crc32b', $tempfile) != dechex($crc32))
+				{
+				    throw new Kafka_Exception("Invalid message CRC32");
+				}
+				//now uncompress
+				$zp = gzopen($tempfile, "rb");
+				//skip size and checksum (gzread ignores them) 
+				fread($zp, 10);
+				$payload = gzread($zp, $payloadSize - 10);
 				fclose($zp);
-				unlink($tempname);
+				unlink($tempfile);
 				break;
 			case 2:
 				throw new Kafka_Exception("Snappy compression not implemented");

@@ -9,11 +9,12 @@ so the api doesn't need to follow the scala/java object graph and can be much si
     - streaming message individually rather than loading the whole response into memory
     - offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
     - gzip working correctly both ways, including the pre-compression message header
-    - TopicFilter abstract
+    - TopicFilter abstract (only for fetching)
     - crc32 check working
     - ProduceRequest and FetchRequests can use wire format 0 and 1
     - Broker abstraction for different connection strategies
     - OffsetRequest workaround for 64-bit unix timestamp
+    - Produce Request only checks correct bytes were sent (ack not available)
 
 
 Examples
@@ -25,7 +26,7 @@ Examples
 TODOs
 
 IN PROGRESS - abstract a channel which handles the request response wrapping and errorcode + throw errorCode exceptions
+TODO add getTopic() for Message to allow filters across multiple topics
 TODO maxSzize check when fetching and throw Kafka_Exception when overflown
 TODO Snappy compression
-TODO create Kafka class to hold connection properties but no actual socket (maybe put key constants there too)
-TODO compensate for missing acknowledgement when producing messages
+FIXME implement produce acknowledgement once implemented in kafka (maybe add look at the jira to do it)

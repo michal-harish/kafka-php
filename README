@@ -5,18 +5,24 @@ pulled continuously from the socket as well as the fact that php has a different
 and communication pattern (each request is a thread within http server)
 so the api doesn't need to follow the scala/java object graph and can be much simpler.
  
-There are few differences to the existing Kafka PHP client: 
-- streaming message individually rather than loading the whole response into memory
-- offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
-- flushing payload into the file to use gzopen function to enabled decompression (PHP gzdecode missing)
-- TopicFilter abstract
-- crc32 check working
-- 
-
-Try the cli example />php ./scripts/consumer.php 
+    There are few differences to the existing Kafka PHP client: 
+    - streaming message individually rather than loading the whole response into memory
+    - offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
+    - gzip working correctly both ways, including the pre-compression message header
+    - TopicFilter abstract
+    - crc32 check working
+    - ProduceRequest and FetchRequests can use wire format 0 and 1
 
 
-TODO ProducerRequest
+Examples
+
+/>php ./scripts/consumer.php  
+/>php ./scripts/producer.php
+
+
+Work
+
+IN PROGRESS OffsetsRequest - Need to figure out translating unix timestamp to 64-bit long again!
 TODO process and act upon the errorCode after reading the response header
 TODO maxSzize check when fetching and throw Kafka_Exception when overflown
 TODO Snappy compression

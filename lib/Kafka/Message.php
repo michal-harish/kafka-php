@@ -164,7 +164,7 @@ class Kafka_Message
                     //
                 }
                 //gzip compressed blocks
-                $gzData = fread($connection, $payloadSize - 8);
+                $gzData = fread($connection, $payloadSize - 8);                
                 $gzFooter = fread($connection, 8);
                 $compressedPayload = $gzHeader . $gzData . $gzFooter;
                 //validate the payload
@@ -208,17 +208,17 @@ class Kafka_Message
                         "Invalid size or crc of the gzip uncompressed data"
                     );
                 }
-                //FIXME no idea where the extra 10-bytes come from after inflating
-                //but that's what i get when pulling messages produced by kakfa-console-producer.sh
+                //remove the extra header which is added by kafka compression
+                //probably accidentally - see comment below in the create method.
                 $payload = substr($payload, 10);
             break;
             case Kafka_Broker::COMPRESSION_SNAPPY:
-                throw new Kafka_Exception("Snappy compression not implemented");
+                throw new Kafka_Exception("Snappy compression not yet implemented in php client");
                 break;
             default:
                 throw new Kafka_Exception("Unknown kafka compression $compression");
             break;
-        }
+        }        
         $result =  new Kafka_Message(
             $offset,
             $magic,
@@ -237,15 +237,25 @@ class Kafka_Message
                 $compressedPayload = &$payload; 
                 break;
             case Kafka_Broker::COMPRESSION_GZIP:
-                $compressedPayload = gzencode($payload);
+            	//Wrap payload as a non-compressed kafak message.
+            	//This is probably a bug in Kafka where
+            	//the bytearray passed to compression util contains
+            	//the message header. 
+            	$wrappedPayload = pack('N', strlen($payload) + 6) 
+            		. pack('C', Kafka_Broker::MAGIC_1) 
+            		. pack('C', Kafka_Broker::COMPRESSION_NONE)
+            		. pack('N', crc32($payload)) 
+            		. $payload;
+            	//gzip the payload
+                $compressedPayload = gzencode($wrappedPayload);
                 break;
             case Kafka_Broker::COMPRESSION_SNAPPY:
-                throw new Kafka_Exception("Snappy compression not implemented");
+                throw new Kafka_Exception("Snappy compression not yet implemented in php client");
                 break;
             default:
                 throw new Kafka_Exception("Unknown kafka compression $compression");
                 break;
-        }
+        }        
         return new Kafka_Message(
             new Kafka_Offset(),
             Kafka_Broker::MAGIC_1,

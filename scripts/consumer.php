@@ -43,9 +43,13 @@ $topic1 = new Kafka_FetchRequest(
 );
 
 //receive and dump messages
-while ($message = $topic1->nextMessage())
+while(true)
 {
-    echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
+	while ($message = $topic1->nextMessage())
+	{
+	    echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
+	}
+	usleep(250);
 }
 
 echo "\nNo more messages - new watermark offset: " . $topic1->getOffset() . "\n\n";

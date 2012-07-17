@@ -11,6 +11,7 @@ class Kafka_ProduceRequest
     //publish internals
     private $topic;
     private $partition;
+    private $defaultCompression;
 
     /**
      * @param string $topic - topic name to publish to
@@ -22,6 +23,7 @@ class Kafka_ProduceRequest
     public function __construct(
         $topic,
         $partition = 0,
+        $defaultCompression = Kafka_Broker::COMPRESSION_GZIP,
         $host = 'localhost',
         $port = 9092,
         $timeout = 5
@@ -29,30 +31,44 @@ class Kafka_ProduceRequest
     {
         $this->topic = $topic;
         $this->partition = 0;
+        $this->defaultCompression = $defaultCompression;
         $this->host = $host;
         $this->port = $port;
         $this->timeout = $timeout;
     }
 
     /**
-     * @param array $messages
-     * @param int $compression
+     * Publish a single message to the topic of this request.
+     * 
+     * @param Kafka_Message $message
      */
-    public function publish(Kafka_Message $message)
+    public function produce(Kafka_Message $message)
     {
         $messageSet = array($message);
         return $this->produce($messageSet);
     }
 
     /**
-     * @param array $messageSet
+     * Produce a set of messages to the topic of this request.
+     * 
+     * @param array $messageSet Array containing either Kafka_Message objects or 
+     * 	payload strings.
      */
-    public function produce(array $messageSet)
+    public function publish(array $messageSet)
     {
         $messageSetSize = 0;
-        foreach($messageSet as $message)
+        foreach($messageSet as &$message)
         {
+        	if (is_string($message))
+        	{
+        		//it's a payload string instead of object
+        		$message = Kafka_Message::create(
+        			$message,
+        			$this->defaultCompression
+        		);
+        	}
             $messageSetSize += $message->size();
+            unset($message);
         }
         $this->connect();
         fwrite($this->connection, pack('N', 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize)); //

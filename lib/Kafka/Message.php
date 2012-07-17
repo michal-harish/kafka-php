@@ -87,7 +87,7 @@ class Kafka_Message
         $written += fwrite($stream, pack('C', Kafka_Broker::MAGIC_1)); 
         if ($this->magic == Kafka_Broker::MAGIC_1 )
         {
-        	$written += fwrite($stream, pack('C', $this->compression)); 
+            $written += fwrite($stream, pack('C', $this->compression)); 
         }
         $written += fwrite($stream, pack('N', crc32($this->compressedPayload)));
         $written += fwrite($stream, $this->compressedPayload);
@@ -97,8 +97,9 @@ class Kafka_Message
     /**
     * Creates an instance of a Message from a response stream.
     * @param resource $connection
+    * @param Kafka_Offset $offset
     */
-    public static function createFromStream($connection, $offset)
+    public static function createFromStream($connection, Kafka_Offset $offset)
     {
         $size = array_shift(unpack('N', fread($connection, 4)));
 
@@ -169,7 +170,7 @@ class Kafka_Message
                     //
                 }
                 //gzip compressed blocks
-                $gzData = fread($connection, $payloadSize - 8);                
+                $gzData = fread($connection, $payloadSize - 8);
                 $gzFooter = fread($connection, 8);
                 $compressedPayload = $gzHeader . $gzData . $gzFooter;
                 //validate the payload
@@ -178,13 +179,14 @@ class Kafka_Message
                     throw new Kafka_Exception("Invalid message CRC32");
                 }
                 //uncompress now depending on the method flag
+                $payloadBuffer = fopen('php://temp', 'rw');
                 switch($gzmethod)
                 {
                     case 0: //copy
-                        $payload = &$gzData;
+                        $uncompressedSize = fwrite($payloadBuffer, $gzData);
                     case 1: //compress
                         //TODO have not tested compress method
-                        $payload = gzuncompress($gzData);
+                        $uncompressedSize = fwrite($payloadBuffer, gzuncompress($gzData));
                     case 2: //pack
                         throw new Kafka_Exception(
                             "GZip method unsupported: $gzmethod pack"
@@ -196,7 +198,7 @@ class Kafka_Message
                         );
                     break;
                     case 8: //deflate
-                        $payload = gzinflate($gzData);
+                        $uncompressedSize = fwrite($payloadBuffer, gzinflate($gzData));
                     break;
                     default :
                         throw new Kafka_Exception(
@@ -207,15 +209,19 @@ class Kafka_Message
                 //validate gzip data based on the gzipt footer 
                 $datacrc = array_shift(unpack("V",substr($gzFooter, 0, 4)));
                 $datasize = array_shift(unpack("V",substr($gzFooter, 4, 4)));
-                if (strlen($payload) != $datasize || crc32($payload) != $datacrc)
+                rewind($payloadBuffer);
+                if ($uncompressedSize != $datasize || crc32(stream_get_contents($payloadBuffer)) != $datacrc)
                 {
                     throw new Kafka_Exception(
                         "Invalid size or crc of the gzip uncompressed data"
                     );
                 }
-                //remove the extra header which is added by kafka compression
-                //probably accidentally - see comment below in the create method.
-                $payload = substr($payload, 10);
+                //now unwrap the inner kafka message
+                //- not sure if this is bug in kafka but the scala code works with message inside the compressed payload
+                rewind($payloadBuffer);
+                $innerMessage = self::createFromStream($payloadBuffer, new Kafka_Offset());
+                fclose($payloadBuffer);
+                $payload = $innerMessage->getPayload();
             break;
             case Kafka_Broker::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
@@ -223,7 +229,7 @@ class Kafka_Message
             default:
                 throw new Kafka_Exception("Unknown kafka compression $compression");
             break;
-        }        
+        }
         $result =  new Kafka_Message(
             $offset,
             $magic,
@@ -242,17 +248,16 @@ class Kafka_Message
                 $compressedPayload = &$payload; 
                 break;
             case Kafka_Broker::COMPRESSION_GZIP:
-            	//Wrap payload as a non-compressed kafak message.
-            	//This is probably a bug in Kafka where
-            	//the bytearray passed to compression util contains
-            	//the message header. 
-            	$wrappedPayload = pack('N', strlen($payload) + 6) 
-            		. pack('C', Kafka_Broker::MAGIC_1) 
-            		. pack('C', Kafka_Broker::COMPRESSION_NONE)
-            		. pack('N', crc32($payload)) 
-            		. $payload;
-            	//gzip the payload
-                $compressedPayload = gzencode($wrappedPayload);
+                //Wrap payload as a non-compressed kafka message.
+                //This is probably a bug in Kafka where
+                //the bytearray passed to compression util contains
+                //the message header. 
+                $innerMessage = self::create($payload, Kafka_Broker::COMPRESSION_NONE);
+                $wrappedPayload = fopen('php://temp', 'wr');
+                $innerMessage->writeTo($wrappedPayload);
+                rewind($wrappedPayload);
+                //gzip the wrappedPayload
+                $compressedPayload = gzencode(stream_get_contents($wrappedPayload));
                 break;
             case Kafka_Broker::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
@@ -260,7 +265,7 @@ class Kafka_Message
             default:
                 throw new Kafka_Exception("Unknown kafka compression $compression");
                 break;
-        }        
+        }
         return new Kafka_Message(
             new Kafka_Offset(),
             Kafka_Broker::MAGIC_1,

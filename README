@@ -13,6 +13,7 @@ so the api doesn't need to follow the scala/java object graph and can be much si
     - crc32 check working
     - ProduceRequest and FetchRequests can use wire format 0 and 1
     - Broker abstraction for different connection strategies
+    - OffsetRequest workaround for 64-bit unix timestamp
 
 
 Examples
@@ -23,8 +24,7 @@ Examples
 
 TODOs
 
-IN PROGRESS OffsetsRequest - Need to figure out translating unix timestamp to 64-bit long again!
-TODO process and act upon the errorCode after reading the response header
+IN PROGRESS - abstract a channel which handles the request response wrapping and errorcode + throw errorCode exceptions
 TODO maxSzize check when fetching and throw Kafka_Exception when overflown
 TODO Snappy compression
 TODO create Kafka class to hold connection properties but no actual socket (maybe put key constants there too)

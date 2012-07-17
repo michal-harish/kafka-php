@@ -20,7 +20,10 @@ class Kafka_Broker
     const COMPRESSION_NONE = 0;
     const COMPRESSION_GZIP = 1;
     const COMPRESSION_SNAPPY = 2;
-
+    
+    const OFFSETS_LATEST = "ffffffffffffffff"; //-1L
+    const OFFSETS_EARLIEST = "fffffffffffffffe"; //-2L
+    
     //connection properties
     private $host;
     private $port;

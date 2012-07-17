@@ -14,7 +14,18 @@ class Kafka_Offset
 	 * the actual byte array of the value
 	 * @var string[8]
 	 */
-	protected $data;
+	public $data;
+	
+	/**
+	 * Creates an instance of an Offset from a stream.
+	 * @param resource $stream
+	 */
+	public static function createFromStream($stream)
+	{
+		$offset = new Kafka_Offset();
+		$offset->data = fread($stream, 8);
+		return $offset;
+	}
 	
 	/**
 	 * Creating new offset can take initial hex value, 
@@ -157,4 +168,5 @@ class Kafka_Offset
 			$this->data[$i] = chr($resultByte);
 		}
 	}
+	
 }

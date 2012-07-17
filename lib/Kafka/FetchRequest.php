@@ -134,15 +134,10 @@ class Kafka_FetchRequest
         ;
         $socket = $this->broker->getSocket();
         $written = fwrite($socket, pack('N', $requestSize));
-        //write short FETCH request key
-        $written += fwrite($socket, pack('n', 1));
-        //write topic and partition
-        $written += $this->topicFilter->writeTo($socket);
-        //write offset long
+        $written += fwrite($socket, pack('n', Kafka_Broker::REQUEST_KEY_FETCH));
+        $written += $this->topicFilter->writeTo($socket);//topic and partition
         $written += $this->offset->writeTo($socket);
-        //write maxSize Int
-        $written += fwrite($socket, pack('N', $this->maxSize));
-        
+        $written += fwrite($socket, pack('N', $this->maxSize));        
         if ($written  != $requestSize + 4)
         {
         	throw new Kafka_Exception(

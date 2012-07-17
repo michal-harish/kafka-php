@@ -36,24 +36,32 @@ if (!$topicName)
 //create connection 
 $broker = new Kafka_Broker($kafkaHost, $kafkaPort);
 
+echo "\nOFFSETS REQUEST\n\n";
+//offset request
+$offsets = new Kafka_OffsetRequest($broker, $topicName);
+foreach($offsets->getOffsets() as $offset )
+{
+	echo $offset . "\n";
+}
+
+echo "\nFETCH REQUEST\n";
 //create request 
-$topic1 = new Kafka_FetchRequest(
+$fetch = new Kafka_FetchRequest(
 	$broker,
     new Kafka_TopicFilter($topicName),
     new Kafka_Offset($offsetHex)
 );
-
 //receive and dump messages
 //while(true)
 {
-	while ($message = $topic1->nextMessage())
+	while ($message = $fetch->nextMessage())
 	{
 	    echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
 	}
 	//usleep(250);
 }
 
-echo "\nNo more messages - new watermark offset: " . $topic1->getOffset() . "\n\n";
+echo "\nNo more messages - new watermark offset: " . $fetch->getOffset() . "\n\n";
 
 //go home
 $broker->close();

@@ -77,16 +77,21 @@ class Kafka_Message
     }
 
     /**
-     * Write message packet into the request stream
-     * @param resource $connection
+     * Write message packet into a stream (mostly request socket)
+     * @param resource $stream
+     * @return int $written number of bytes succesfully sent
      */
-    public function writeTo($connection)
+    public function writeTo($stream)
     {
-        fwrite($connection, pack('N', $this->size() - 4)); // message bound size
-        fwrite($connection, pack('C', Kafka_Broker::MAGIC_1)); 
-        fwrite($connection, pack('C', $this->compression)); 
-        fwrite($connection, pack('N', crc32($this->compressedPayload)));
-        fwrite($connection, $this->compressedPayload);
+        $written = fwrite($stream, pack('N', $this->size() - 4)); // message bound size
+        $written += fwrite($stream, pack('C', Kafka_Broker::MAGIC_1)); 
+        if ($this->magic == Kafka_Broker::MAGIC_1 )
+        {
+        	$written += fwrite($stream, pack('C', $this->compression)); 
+        }
+        $written += fwrite($stream, pack('N', crc32($this->compressedPayload)));
+        $written += fwrite($stream, $this->compressedPayload);
+        return $written;
     }
 
     /**

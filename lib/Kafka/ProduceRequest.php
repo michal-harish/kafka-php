@@ -1,40 +1,40 @@
 <?php 
+/**
+ * ProduceRequest is a connection to a topic which implements
+ * multiple ways of publishing single message or set of messages.
+ * 
+ * Currently there is no acknowledgement that the message has 
+ * been received by the broker.
+ * 
+ * @author michal.harish@gmail.com
+ */
 class Kafka_ProduceRequest
 {
-    //connection properties
-    private $host;
-    private $port;
-    private $timeout;
-    //connection state internals
-    private $connection = NULL;
-
+    //connection object
+	private $broker;
+	
     //publish internals
     private $topic;
     private $partition;
     private $defaultCompression;
 
     /**
+     * @param Kafka_Broker $broker - Connection object
      * @param string $topic - topic name to publish to
      * @param int $partition - broker partition
-     * @param string $host - Kafka broker host
-     * @param int $port - Kafka broker port
-     * @param int $timeout - Kafka broker connection timeout
+     * @param int $defaultCompression - compression type for messages passed as simple strings 
      */
     public function __construct(
+    	Kafka_Broker $broker,
         $topic,
         $partition = 0,
-        $defaultCompression = Kafka_Broker::COMPRESSION_GZIP,
-        $host = 'localhost',
-        $port = 9092,
-        $timeout = 5
+        $defaultCompression = Kafka_Broker::COMPRESSION_GZIP
     )
     {
+    	$this->broker = $broker;
         $this->topic = $topic;
         $this->partition = 0;
         $this->defaultCompression = $defaultCompression;
-        $this->host = $host;
-        $this->port = $port;
-        $this->timeout = $timeout;
     }
 
     /**
@@ -55,7 +55,7 @@ class Kafka_ProduceRequest
      * 	payload strings.
      */
     public function publish(array $messageSet)
-    {
+    {    	
         $messageSetSize = 0;
         foreach($messageSet as &$message)
         {
@@ -70,47 +70,23 @@ class Kafka_ProduceRequest
             $messageSetSize += $message->size();
             unset($message);
         }
-        $this->connect();
-        fwrite($this->connection, pack('N', 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize)); //
-        fwrite($this->connection, pack('n', Kafka_Broker::REQUEST_KEY_PRODUCE));
-        fwrite($this->connection, pack('n', strlen($this->topic)));
-        fwrite($this->connection, $this->topic);
-        fwrite($this->connection, pack('N', $this->partition));
-        fwrite($this->connection, pack('N', $messageSetSize)); //
+        $socket = $this->broker->getSocket();
+        $requestSize = 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize;
+        $written = fwrite($socket, pack('N', $requestSize));
+        $written += fwrite($socket, pack('n', Kafka_Broker::REQUEST_KEY_PRODUCE));
+        $written += fwrite($socket, pack('n', strlen($this->topic)));
+        $written += fwrite($socket, $this->topic);
+        $written += fwrite($socket, pack('N', $this->partition));
+        $written += fwrite($socket, pack('N', $messageSetSize)); //
         foreach($messageSet as $message)
         {
-            $message->writeTo($this->connection);
+            $written += $message->writeTo($socket);
         }
-    }
-
-    /**
-      * Close the connection. Must be called by the application 
-     * but could be added to the __destruct method too.
-     */
-    public function close() {
-        if (is_resource($this->connection)) {
-            fclose($this->connection);
-        }
-    }
-
-    /**
-     * Set up the socket connection if not yet done.
-     * @throws Kafka_Exception
-     */
-    private function connect()
-    {
-        if (!is_resource($this->connection))
+        if ($written  != $requestSize + 4)
         {
-            $this->connection = stream_socket_client(
-                'tcp://' . $this->host . ':' . $this->port, $errno, $errstr
-            );
-            if (!$this->connection) {
-                throw new Kafka_Exception($errstr, $errno);
-            }
-            stream_set_timeout($this->connection, $this->timeout);
-            //stream_set_read_buffer($this->connection,  65535);
-            //stream_set_write_buffer($this->connection, 65535);
-            $this->requestSent = FALSE;
+        	throw new Kafka_Exception(
+        		"ProduceRequest written $written bytes, expected to send:" . ($requestSize + 4)
+        	);
         }
     }
 }

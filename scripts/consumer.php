@@ -33,28 +33,29 @@ if (!$topicName)
     exit("\nUsage: php consumer.php <topicname> [--offset <hex_offset>] [--broker <kafka_host:kafka_port>]\n\n");
 }
 
+//create connection 
+$broker = new Kafka_Broker($kafkaHost, $kafkaPort);
+
 //create request 
 $topic1 = new Kafka_FetchRequest(
+	$broker,
     new Kafka_TopicFilter($topicName),
-    new Kafka_Offset($offsetHex),
-    1000000,
-    $kafkaHost,
-    $kafkaPort
+    new Kafka_Offset($offsetHex)
 );
 
 //receive and dump messages
-while(true)
+//while(true)
 {
 	while ($message = $topic1->nextMessage())
 	{
 	    echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
 	}
-	usleep(250);
+	//usleep(250);
 }
 
 echo "\nNo more messages - new watermark offset: " . $topic1->getOffset() . "\n\n";
 
 //go home
-$topic1->close();
+$broker->close();
 
 

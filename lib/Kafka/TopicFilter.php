@@ -32,14 +32,16 @@ class Kafka_TopicFilter
 	}
 	
 	/**
-	 * Write packet into the request connection 
+	 * Write packet into a stream
 	 * @param resource $connection
+	 * @return int $written number of bytes succesfully sent
 	 */
-	public function writeTo($connection)
+	public function writeTo($stream)
 	{
-		fwrite(	$connection, pack('n', strlen($this->topic)));
-		fwrite( $connection, $this->topic );
-		fwrite( $connection, pack('N', $this->partition));
+		$written = fwrite($stream, pack('n', strlen($this->topic)));
+		$written += fwrite($stream, $this->topic );
+		$written += fwrite($stream, pack('N', $this->partition));
+		return $written;
 	}
 	
 	/**

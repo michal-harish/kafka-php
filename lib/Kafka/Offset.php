@@ -45,12 +45,13 @@ class Kafka_Offset
 	}	
 	
 	/**
-	 * Write packet into the request connection
-	 * @param unknown_type $connection
+	 * Write packet into a stream
+	 * @param resource $stream
+	 * @return int $written number of bytes succesfully sent
 	 */
-	public function writeTo($connection)
+	public function writeTo($stream)
 	{
-		fwrite($connection, $this->data, 8);
+		return fwrite($stream, $this->data, 8);
 	}
 
 	/**

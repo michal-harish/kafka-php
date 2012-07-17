@@ -7,7 +7,8 @@ $topicName = isset($_SERVER['argv'][1])
 	? $_SERVER['argv'][1] 
 	: exit("\nUsage: php producer.php <topic_name>\n\n");
 
-$request = new Kafka_ProduceRequest($topicName);
+$conn = new Kafka_Broker('localhost', 9092);
+$request = new Kafka_ProduceRequest($conn, $topicName);
 
 $request->publish(
     array(
@@ -24,4 +25,4 @@ $request->publish(
     )
 );
 
-$request->close();
+$conn->close();

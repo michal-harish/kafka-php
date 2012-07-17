@@ -12,6 +12,7 @@ so the api doesn't need to follow the scala/java object graph and can be much si
     - TopicFilter abstract
     - crc32 check working
     - ProduceRequest and FetchRequests can use wire format 0 and 1
+    - Broker abstraction for different connection strategies
 
 
 Examples
@@ -20,10 +21,11 @@ Examples
 />php ./scripts/producer.php
 
 
-Work
+TODOs
 
 IN PROGRESS OffsetsRequest - Need to figure out translating unix timestamp to 64-bit long again!
 TODO process and act upon the errorCode after reading the response header
 TODO maxSzize check when fetching and throw Kafka_Exception when overflown
 TODO Snappy compression
 TODO create Kafka class to hold connection properties but no actual socket (maybe put key constants there too)
+TODO compensate for missing acknowledgement when producing messages

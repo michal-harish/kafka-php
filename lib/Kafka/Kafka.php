@@ -1,12 +1,21 @@
 <?php
 /**
- * Broker connection object.
- * It can be later on extended to provide an auto-balanced connection to the 
- * cluster of borkers without disrupting the client code.
+ * Kafka connection object.
+ * Currently connects to a single broker, it can be later on extended to provide an auto-balanced 
+ * connection to the cluster of borkers without disrupting the client code.
  *  
  * @author michal.harish@gmail.com
  */
-class Kafka_Broker
+
+include "Exception.php";
+include "Offset.php";
+include "Message.php";
+include "Request.php";
+include "OffsetRequest.php";
+include "FetchRequest.php";
+include "ProduceRequest.php";
+
+class Kafka
 {
     const MAGIC_0 = 0; //wire format without compression attribute
     const MAGIC_1 = 1; //wire format with compression attribute

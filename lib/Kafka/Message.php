@@ -67,10 +67,10 @@ class Kafka_Message
     {
         switch ($this->magic)
         {
-            case Kafka_Broker::MAGIC_0:
+            case Kafka::MAGIC_0:
                 return 5 + strlen($this->compressedPayload) + 4;
                 break;
-            case Kafka_Broker::MAGIC_1:
+            case Kafka::MAGIC_1:
                 return 6 + strlen($this->compressedPayload) + 4;
                 break;
         }
@@ -84,8 +84,8 @@ class Kafka_Message
     public function writeTo($stream)
     {
         $written = fwrite($stream, pack('N', $this->size() - 4)); // message bound size
-        $written += fwrite($stream, pack('C', Kafka_Broker::MAGIC_1)); 
-        if ($this->magic == Kafka_Broker::MAGIC_1 )
+        $written += fwrite($stream, pack('C', Kafka::MAGIC_1)); 
+        if ($this->magic == Kafka::MAGIC_1 )
         {
             $written += fwrite($stream, pack('C', $this->compression)); 
         }
@@ -106,20 +106,20 @@ class Kafka_Message
         //read magic and load relevant attributes
         switch($magic = array_shift(unpack('C', fread($connection, 1))))
         {
-            case Kafka_Broker::MAGIC_0:
+            case Kafka::MAGIC_0:
                 //no compression attribute
                 $compression = 0;
                 $payloadSize = $size - 5;
                 break;
-            case Kafka_Broker::MAGIC_1:
+            case Kafka::MAGIC_1:
                 //read compression attribute
                 $compression = array_shift(unpack('C', fread($connection, 1)));
                 $payloadSize = $size - 6;
                 break;
             default:
                 throw new Kafka_Exception(
-                        "Unknown message format - MAGIC = $magic"
-            );
+                    "Unknown message format - MAGIC = $magic"
+            	);
             break;
         }
         //read crc
@@ -128,7 +128,7 @@ class Kafka_Message
         //load payload depending on type of the compression
         switch($compression)
         {
-            case Kafka_Broker::COMPRESSION_NONE:
+            case Kafka::COMPRESSION_NONE:
                 //message not compressed, read directly from the connection
                 $payload = fread($connection, $payloadSize);
                 //validate the raw payload
@@ -138,7 +138,7 @@ class Kafka_Message
                 }
                 $compressedPayload = &$payload;
                 break;
-            case Kafka_Broker::COMPRESSION_GZIP:
+            case Kafka::COMPRESSION_GZIP:
                 //gzip header
                 $gzHeader = fread($connection, 10); //[0]gzip signature, [2]method, [3]flags, [4]unix ts, [8]xflg, [9]ostype
                 if (strcmp(substr($gzHeader,0,2),"\x1f\x8b"))
@@ -223,7 +223,7 @@ class Kafka_Message
                 fclose($payloadBuffer);
                 $payload = $innerMessage->getPayload();
             break;
-            case Kafka_Broker::COMPRESSION_SNAPPY:
+            case Kafka::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
                 break;
             default:
@@ -240,26 +240,26 @@ class Kafka_Message
         return $result;
     }
 
-    public static function create($payload, $compression = Kafka_Broker::COMPRESSION_GZIP)
+    public static function create($payload, $compression = Kafka::COMPRESSION_GZIP)
     {
         switch($compression)
         {
-            case Kafka_Broker::COMPRESSION_NONE: 
+            case Kafka::COMPRESSION_NONE: 
                 $compressedPayload = &$payload; 
                 break;
-            case Kafka_Broker::COMPRESSION_GZIP:
+            case Kafka::COMPRESSION_GZIP:
                 //Wrap payload as a non-compressed kafka message.
                 //This is probably a bug in Kafka where
                 //the bytearray passed to compression util contains
                 //the message header. 
-                $innerMessage = self::create($payload, Kafka_Broker::COMPRESSION_NONE);
+                $innerMessage = self::create($payload, Kafka::COMPRESSION_NONE);
                 $wrappedPayload = fopen('php://temp', 'wr');
                 $innerMessage->writeTo($wrappedPayload);
                 rewind($wrappedPayload);
                 //gzip the wrappedPayload
                 $compressedPayload = gzencode(stream_get_contents($wrappedPayload));
                 break;
-            case Kafka_Broker::COMPRESSION_SNAPPY:
+            case Kafka::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
                 break;
             default:
@@ -268,7 +268,7 @@ class Kafka_Message
         }
         return new Kafka_Message(
             new Kafka_Offset(),
-            Kafka_Broker::MAGIC_1,
+            Kafka::MAGIC_1,
             $compression,
             $payload,
             $compressedPayload

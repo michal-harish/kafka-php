@@ -12,25 +12,25 @@ abstract class Kafka_Request
      * Connection object 
      * @var Kafka
      */
-	protected $connection;
-	
-	/**
-	 * @var string
-	 */
-	protected $topic;
-	
-	/**
-	 * @var int
-	 */
-	protected $partition;
+    protected $connection;
+
+    /**
+     * @var string
+     */
+    protected $topic;
+
+    /**
+     * @var int
+     */
+    protected $partition;
 
     /**
      * Response of a readable channel
      * @var int
-     */  
+     */
     protected $responseSize;
-	
-	/**
+
+    /**
      * Request channel state
      * @var boolean
      */
@@ -39,21 +39,29 @@ abstract class Kafka_Request
 
     /**
      * @param Kafka $connection 
-	 * @param string $topic
-	 * @param int $partition 
+     * @param string $topic
+     * @param int $partition 
      */
     public function __construct(
-    	Kafka $connection,
-		$topic,
-		$partition = 0
+        Kafka $connection,
+        $topic,
+        $partition = 0
     )
     {
-    	$this->connection = $connection;
+        $this->connection = $connection;
+        if (!$topic)
+        {
+            throw new Kafka_Exception("Topic name cannot be an empty string.");
+        }
         $this->topic = $topic;
+        if (!is_numeric($partition) || $partition < 0)
+        {
+            throw new Kafka_Exception("Partition must be a positive integer or 0.");
+        }
         $this->partition = $partition;
         $this->readable = FALSE;
     }
-    
+
     /**
      * Internal fired from the hasIncomingData
      * to initiate the conversation with Kafka broker.
@@ -61,21 +69,21 @@ abstract class Kafka_Request
      * @return bool Ready to read state
      */
     abstract protected function send();
-    
+
     /**
      * @return boolean
      */
     public function isReadable()
     {
-    	return $this->readable;
+        return $this->readable;
     }
-    
+
     /**
      * @return boolean
      */
     public function isWritable()
     {
-    	return !$this->readable;
+        return !$this->readable;
     }
 
     /**
@@ -90,7 +98,7 @@ abstract class Kafka_Request
         //check the state of the connection
         if (!$this->readable)
         {
-        	$this->responseSize = NULL;
+            $this->responseSize = NULL;
             if (!$this->readable = $this->send())
             {
                 throw new Kafka_Exception(
@@ -120,7 +128,7 @@ abstract class Kafka_Request
             return FALSE;
         } else 
         {
-        	return TRUE;
+            return TRUE;
         }
     }
 

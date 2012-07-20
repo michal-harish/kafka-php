@@ -16,7 +16,7 @@ class Kafka_ProduceRequest extends Kafka_Request
      * @var boolean
      */
     private $defaultCompression;
-    
+
     /**
      * @var array
      */
@@ -29,17 +29,17 @@ class Kafka_ProduceRequest extends Kafka_Request
      * @param int $defaultCompression Compression type for messages passed as simple strings 
      */
     public function __construct(
-    	Kafka $connection,
+        Kafka $connection,
         $topic,
         $partition = 0,
         $defaultCompression = Kafka::COMPRESSION_GZIP
     )
     {
-    	parent::__construct($connection, $topic, $partition);
+        parent::__construct($connection, $topic, $partition);
         $this->defaultCompression = $defaultCompression;
         $this->messageQueue = array();
     }
-    
+
     /**
      * Internal fired directly from the hasIncomingData to initiate conversation with Kafka broker
      * in this case sending a fetch request.
@@ -48,47 +48,46 @@ class Kafka_ProduceRequest extends Kafka_Request
      */
     protected function send()
     {
-    	if (!$this->isWritable())
-    	{
-    		throw new Kafka_Exception(
+        if (!$this->isWritable())
+        {
+            throw new Kafka_Exception(
                 "Kafka Request channel is not writable, there is data to be read from previous response."
-    		);
-    	}
-    	$messageSetSize = 0;
-    	foreach($this->messageQueue as &$message)
-    	{
-    		if (is_string($message))
-    		{
-    			//it's a payload string instead of object
-    			$message = Kafka_Message::create(
-    				$message,
-    				$this->defaultCompression
-    			);
-    		}
-    		$messageSetSize += $message->size();
-    		unset($message);
-    	}
-    	$socket = $this->connection->getSocket();
-    	$requestSize = 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize;
-    	$written = fwrite($socket, pack('N', $requestSize));
-    	$written += fwrite($socket, pack('n', Kafka::REQUEST_KEY_PRODUCE));
-    	$written += fwrite($socket, pack('n', strlen($this->topic)));
-    	$written += fwrite($socket, $this->topic);
-    	$written += fwrite($socket, pack('N', $this->partition));
-    	$written += fwrite($socket, pack('N', $messageSetSize)); //
-    	foreach($this->messageQueue as $message)
-    	{
-    		$written += $message->writeTo($socket);
-    	}
-    	if ($written  != $requestSize + 4)
-    	{
-    		throw new Kafka_Exception(
-    	    	"ProduceRequest written $written bytes, expected to send:" . ($requestSize + 4)
-    		);
-    	}
-    	
-    	//Ready-to-read state is TRUE once acknowledgements are in place
-    	return TRUE;
+            );
+        }
+        $messageSetSize = 0;
+        foreach($this->messageQueue as &$message)
+        {
+            if (is_string($message))
+            {
+                //it's a payload string instead of object
+                $message = Kafka_Message::create(
+                    $message,
+                    $this->defaultCompression
+                );
+            }
+            $messageSetSize += $message->size();
+            unset($message);
+        }
+        $socket = $this->connection->getSocket();
+        $requestSize = 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize;
+        $written = fwrite($socket, pack('N', $requestSize));
+        $written += fwrite($socket, pack('n', Kafka::REQUEST_KEY_PRODUCE));
+        $written += fwrite($socket, pack('n', strlen($this->topic)));
+        $written += fwrite($socket, $this->topic);
+        $written += fwrite($socket, pack('N', $this->partition));
+        $written += fwrite($socket, pack('N', $messageSetSize)); //
+        foreach($this->messageQueue as $message)
+        {
+            $written += $message->writeTo($socket);
+        }
+        if ($written  != $requestSize + 4)
+        {
+            throw new Kafka_Exception(
+                "ProduceRequest written $written bytes, expected to send:" . ($requestSize + 4)
+            );
+        }
+        //Ready-to-read state is TRUE once acknowledgements are in place
+        return TRUE;
     }
 
     /**
@@ -99,21 +98,21 @@ class Kafka_ProduceRequest extends Kafka_Request
      */
     public function add($message)
     {
-    	if (is_string($message))
-    	{
-    		//it's a payload string instead of object
-    		$message = Kafka_Message::create(
-	    		$message,
-	    		$this->defaultCompression
-    		);
-    	}
-    	if (!$message instanceof Kafka_Message)
-    	{
-    		throw new Kafka_Exception(
-    			"Message must be a Kafka_Message object or string."
-    		);
-    	}
-    	$this->messageQueue[] = $message;
+        if (is_string($message))
+        {
+            //it's a payload string instead of object
+            $message = Kafka_Message::create(
+                $message,
+                $this->defaultCompression
+            );
+        }
+        if (!$message instanceof Kafka_Message)
+        {
+            throw new Kafka_Exception(
+                "Message must be a Kafka_Message object or string."
+            );
+        }
+        $this->messageQueue[] = $message;
     }
 
     /**
@@ -122,19 +121,18 @@ class Kafka_ProduceRequest extends Kafka_Request
      * @return boolean Success
      */
     public function produce($message = NULL)
-    {    	
-    	if ($message !== NULL)
-    	{
-    		$this->add($message);
-    	}
-    	//we skip any reading from the socket for now
-    	//because no acknowledgements come from Kafka
-    	//and we return the success only.
-    	if ($success = $this->send())
-    	{
-    		$this->messageQueue = array();
-    	}
-    	 
-    	return $success; 
+    {
+        if ($message !== NULL)
+        {
+            $this->add($message);
+        }
+        //we skip any reading from the socket for now
+        //because no acknowledgements come from Kafka
+        //and we return the success only.
+        if ($success = $this->send())
+        {
+            $this->messageQueue = array();
+        }
+        return $success; 
     }
 }

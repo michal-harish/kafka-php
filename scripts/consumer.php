@@ -40,18 +40,18 @@ echo "\nOFFSETS REQUEST\n\n";
 $offsets = new Kafka_OffsetRequest($conn, $topic);
 foreach($offsets->getOffsets() as $offset )
 {
-	echo $offset . "\n";
+    echo $offset . "\n";
 }
 echo "\nFETCH REQUEST\n";
 $fetch = new Kafka_FetchRequest($conn, $topic, 0, new Kafka_Offset($offsetHex));
 
 //while(true)
 {
-	while ($message = $fetch->nextMessage())
-	{
-	    echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
-	}
-	//usleep(250);
+    while ($message = $fetch->nextMessage())
+    {
+        echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
+    }
+    //usleep(250);
 }
 
 echo "\nNo more messages - new watermark offset: " . $fetch->getOffset() . "\n\n";

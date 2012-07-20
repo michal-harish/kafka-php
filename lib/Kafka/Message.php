@@ -96,41 +96,41 @@ class Kafka_Message
 
     /**
     * Creates an instance of a Message from a response stream.
-    * @param resource $connection
+    * @param resource $stream
     * @param Kafka_Offset $offset
     */
-    public static function createFromStream($connection, Kafka_Offset $offset)
+    public static function createFromStream($stream, Kafka_Offset $offset)
     {
-        $size = array_shift(unpack('N', fread($connection, 4)));
+        $size = array_shift(unpack('N', fread($stream, 4)));
 
         //read magic and load relevant attributes
-        switch($magic = array_shift(unpack('C', fread($connection, 1))))
+        switch($magic = array_shift(unpack('C', fread($stream, 1))))
         {
             case Kafka::MAGIC_0:
                 //no compression attribute
-                $compression = 0;
+                $compression = Kafka::COMPRESSION_NONE;
                 $payloadSize = $size - 5;
                 break;
             case Kafka::MAGIC_1:
                 //read compression attribute
-                $compression = array_shift(unpack('C', fread($connection, 1)));
+                $compression = array_shift(unpack('C', fread($stream, 1)));
                 $payloadSize = $size - 6;
                 break;
             default:
                 throw new Kafka_Exception(
                     "Unknown message format - MAGIC = $magic"
-            	);
+                );
             break;
         }
         //read crc
-        $crc32 = array_shift(unpack('N', fread($connection, 4)));
+        $crc32 = array_shift(unpack('N', fread($stream, 4)));
 
         //load payload depending on type of the compression
         switch($compression)
         {
             case Kafka::COMPRESSION_NONE:
                 //message not compressed, read directly from the connection
-                $payload = fread($connection, $payloadSize);
+                $payload = fread($stream, $payloadSize);
                 //validate the raw payload
                 if (crc32($payload) != $crc32)
                 {
@@ -140,38 +140,52 @@ class Kafka_Message
                 break;
             case Kafka::COMPRESSION_GZIP:
                 //gzip header
-                $gzHeader = fread($connection, 10); //[0]gzip signature, [2]method, [3]flags, [4]unix ts, [8]xflg, [9]ostype
+                $gzHeader = fread($stream, 10); //[0]gzip signature, [2]method, [3]flags, [4]unix ts, [8]xflg, [9]ostype
                 if (strcmp(substr($gzHeader,0,2),"\x1f\x8b"))
                 {
                     throw new Kafka_Exception('Not GZIP format');
                 }
                 $gzmethod = ord($gzHeader[2]);
                 $gzflags = ord($gzHeader[3]);
-                $payloadSize -=10;
-                //TODO process the gzflags and read extra fields if necessary
+                if ($gzflags & 31 != $gzflags) {
+                    throw new Kafka_Exception('Invalid GZIP header');
+                }
                 if ($gzflags & 1) // FTEXT
                 {
-                    //
-                }
-                if ($gzflags & 2) // FHCRC
-                {
-                    //
+                    $ascii = TRUE;
                 }
                 if ($gzflags & 4) // FEXTRA
                 {
-                    //
+                    $data = fread($stream, 2);
+                    $extralen = array_shift(unpack("v", $data));
+                    $extra = fread($stream, $extralen);
+                    $gzHeader .= $data . $extra;
                 }
-                if ($gzflags & 8) // FNAME
+                if ($gzflags & 8) // FNAME - zero char terminated string
                 {
-                    //
+                    $filename = '';
+                    while (($char = fgetc($stream)) && ($char != chr(0))) $filename .= $char;
+                    $gzHeader .= $filename . chr(0);
                 }
-                if ($gzflags & 16) // FCOMMENT
+                if ($gzflags & 16) // FCOMMENT - zero char terminated string
                 {
-                    //
+                    $comment = '';
+                    while (($char = fgetc($stream)) && ($char != chr(0))) $comment .= $char;
+                    $gzHeader .= $comment . chr(0);
+                }
+                if ($gzflags & 2) // FHCRC
+                {
+                    $data = fread($stream, 2);
+                    $hcrc = array_shift(unpack("v", $data));
+                    if ($hcrc != (crc32($gzHeader) & 0xffff)) {
+                        throw new Kafka_Exception('Invalid GZIP header crc');
+                    }
+                    $gzHeader .= $data;
                 }
                 //gzip compressed blocks
-                $gzData = fread($connection, $payloadSize - 8);
-                $gzFooter = fread($connection, 8);
+                $payloadSize -= strlen($gzHeader);
+                $gzData = fread($stream, $payloadSize - 8);
+                $gzFooter = fread($stream, 8);
                 $compressedPayload = $gzHeader . $gzData . $gzFooter;
                 //validate the payload
                 if (crc32($compressedPayload ) != $crc32)

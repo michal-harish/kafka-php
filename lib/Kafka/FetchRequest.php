@@ -9,11 +9,11 @@
 class Kafka_FetchRequest extends Kafka_Request
 {
 
-	/**
-	 * @var Kafka_Offset
-	 */
+    /**
+     * @var Kafka_Offset
+     */
     private $offset;
-    
+
     /**
      * Maxium allowed size for individual message
      * @var int
@@ -22,20 +22,20 @@ class Kafka_FetchRequest extends Kafka_Request
 
     /**
      * @param Kafka $connection 
-	 * @param string $topic
-	 * @param int $partition 
+     * @param string $topic
+     * @param int $partition 
      * @param Kafka_Offset $offset - Offset to fetch messages from
      * @param int $maxSize - Maximum size of a single message
      */
     public function __construct(
-    	Kafka $connection,
-		$topic,
-		$partition = 0,
+        Kafka $connection,
+        $topic,
+        $partition = 0,
         Kafka_Offset $offset = NULL, 
         $maxSize = 1000000
     )
     {
-    	parent::__construct($connection, $topic, $partition);
+        parent::__construct($connection, $topic, $partition);
 
         if ($offset === NULL)
         {
@@ -67,16 +67,16 @@ class Kafka_FetchRequest extends Kafka_Request
         $socket = $this->connection->getSocket();
         $written = fwrite($socket, pack('N', $requestSize));
         $written += fwrite($socket, pack('n', Kafka::REQUEST_KEY_FETCH));
-		$written += fwrite($socket, pack('n', strlen($this->topic)));
-		$written += fwrite($socket, $this->topic );
-		$written += fwrite($socket, pack('N', $this->partition));
+        $written += fwrite($socket, pack('n', strlen($this->topic)));
+        $written += fwrite($socket, $this->topic );
+        $written += fwrite($socket, pack('N', $this->partition));
         $written += $this->offset->writeTo($socket);
-        $written += fwrite($socket, pack('N', $this->maxSize));        
+        $written += fwrite($socket, pack('N', $this->maxSize));
         if ($written  != $requestSize + 4)
         {
-        	throw new Kafka_Exception(
-        		"FetchRequest written $written bytes, expected to send:" . ($requestSize + 4)
-        	);
+            throw new Kafka_Exception(
+                "FetchRequest written $written bytes, expected to send:" . ($requestSize + 4)
+            );
         }
         //return the ready-to-read state
         return TRUE;
@@ -94,23 +94,23 @@ class Kafka_FetchRequest extends Kafka_Request
     */
     public function nextMessage()
     {
-    	if ($this->hasIncomingData())
-    	{
-    		$message = Kafka_Message::createFromStream(
-    			$this->connection->getSocket(),
-    			clone $this->offset
-    		);
-    		//move the fetcher offset behind this message
-    		$this->offset->addInt($message->size());
-    		//adjust remaining size of the response
-    		$this->responseSize -= $message->size();
-    		//here you are
-    		return $message;
-    	}
-    	else
-    	{
-    		return FALSE;
-    	}
+        if ($this->hasIncomingData())
+        {
+            $message = Kafka_Message::createFromStream(
+                $this->connection->getSocket(),
+                clone $this->offset
+            );
+            //move the fetcher offset behind this message
+            $this->offset->addInt($message->size());
+            //adjust remaining size of the response
+            $this->responseSize -= $message->size();
+            //here you are
+            return $message;
+        }
+        else
+        {
+            return FALSE;
+        }
     }
     
     /**
@@ -123,6 +123,6 @@ class Kafka_FetchRequest extends Kafka_Request
      */
     public function getOffset()
     {
-    	return $this->offset;
+        return $this->offset;
     }
 }

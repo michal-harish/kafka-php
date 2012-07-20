@@ -114,6 +114,10 @@ abstract class Kafka_Request
             //read the errorCode
             $errorCode = array_shift(unpack('n', fread($socket, 2)));
             $this->responseSize -= 2;
+            if ($errorCode != 0)
+            {
+                throw new Kafka_Exception("Kafka response channel error code: $errorCode");
+            }
         }
         //has the request been read completely ?
         if ($this->responseSize < 0)

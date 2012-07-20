@@ -101,10 +101,18 @@ class Kafka_Message
     */
     public static function createFromStream($stream, Kafka_Offset $offset)
     {
-        $size = array_shift(unpack('N', fread($stream, 4)));
+        if (!$size = @unpack('N', fread($stream, 4)))
+        {
+            throw new Kafka_Exception("Invalid Kafka Message size");
+        }
+        $size = array_shift($size);
 
         //read magic and load relevant attributes
-        switch($magic = array_shift(unpack('C', fread($stream, 1))))
+        if (!$magic = @unpack('C', fread($stream, 1)))
+        {
+            throw new Kafka_Exception("Invalid Kafka Message");
+        }
+        switch($magic = array_shift($magic))
         {
             case Kafka::MAGIC_0:
                 //no compression attribute
@@ -198,15 +206,17 @@ class Kafka_Message
                 {
                     case 0: //copy
                         $uncompressedSize = fwrite($payloadBuffer, $gzData);
+                    break;
                     case 1: //compress
                         //TODO have not tested compress method
                         $uncompressedSize = fwrite($payloadBuffer, gzuncompress($gzData));
+                    break;
                     case 2: //pack
                         throw new Kafka_Exception(
                             "GZip method unsupported: $gzmethod pack"
                         );
                     break;
-                        case 3: //lhz
+                    case 3: //lhz
                         throw new Kafka_Exception(
                             "GZip method unsupported: $gzmethod lhz"
                         );
@@ -232,10 +242,16 @@ class Kafka_Message
                 }
                 //now unwrap the inner kafka message
                 //- not sure if this is bug in kafka but the scala code works with message inside the compressed payload
-                rewind($payloadBuffer);
-                $innerMessage = self::createFromStream($payloadBuffer, new Kafka_Offset());
+                try {
+                    rewind($payloadBuffer);
+                    $innerMessage = self::createFromStream($payloadBuffer, new Kafka_Offset());
+                    $payload = $innerMessage->getPayload();
+                } catch (Kafka_Exception $ke)
+                {
+                    //invalid inner message - probably producer that doesn't wrap header inside the compressed payload
+                    $payload = FALSE;
+                }
                 fclose($payloadBuffer);
-                $payload = $innerMessage->getPayload();
             break;
             case Kafka::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");

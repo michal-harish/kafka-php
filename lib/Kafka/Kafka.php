@@ -42,13 +42,7 @@ class Kafka
      * Connection socket.
      * @var resource
      */
-    private $connection = NULL;
-
-    /**
-     * Socket ready state for another request.  
-     * @var bool
-     */
-    private $ready;
+    private $socket = NULL;
 
     /**
      * @param string $host
@@ -58,7 +52,7 @@ class Kafka
     public function __construct(
         $host = 'localhost',
         $port = 9092,
-        $timeout = 5    
+        $timeout = 6
     )
     {
         $this->host = $host;
@@ -69,27 +63,23 @@ class Kafka
     /**
      * Set up the socket connection if not yet done.
      * @throws Kafka_Exception
-     * @return resource $connection
+     * @return resource $socket
      */
     public function getSocket()
     {
-        if (!is_resource($this->connection))
+        if (!is_resource($this->socket))
         {
-            $this->connection = stream_socket_client(
-                    'tcp://' . $this->host . ':' . $this->port, $errno, $errstr
+            $this->socket = stream_socket_client(
+                'tcp://' . $this->host . ':' . $this->port, $errno, $errstr
             );
-            if (!$this->connection) {
+            if (!$this->socket) {
                 throw new Kafka_Exception($errstr, $errno);
             }
-            stream_set_timeout($this->connection, $this->timeout);
+            stream_set_timeout($this->socket, $this->timeout);
             //stream_set_read_buffer($this->connection,  65535);
             //stream_set_write_buffer($this->connection, 65535);
-            $this->ready = TRUE;
         }
-        if (!$this->ready){
-            return FALSE;
-        }
-        return $this->connection;
+        return $this->socket;
     }
 
     /**
@@ -97,8 +87,8 @@ class Kafka
      * but could be added to the __destruct method too.
      */
     public function close() {
-        if (is_resource($this->connection)) {
-            fclose($this->connection);
+        if (is_resource($this->socket)) {
+            fclose($this->socket);
         }
     }
 }

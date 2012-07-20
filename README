@@ -24,8 +24,7 @@ Examples
 
 TODOs
 
-IN PROGRESS - handle response errorCode at the abstract request level + throw errorCode exceptions
-TODO add getTopic() for Message 
-TODO maxSize check when fetching and throw Kafka_Exception when overflown
+IN PROGRESS maxSize check when fetching and throw Kafka_Exception when overflown
+IN PROGRESS add getTopic() for Message 
 TODO Snappy compression (could not compile snappy.so on 64-bit) 
 TODO implement produce acknowledgement once implemented in kafka (maybe add look at the jira to do it)

@@ -35,13 +35,13 @@ if (!$topic)
 
 //create connection and do offsets request and fetch request
 $conn = new Kafka($kafkaHost, $kafkaPort);
-
+/*
 echo "\nOFFSETS REQUEST\n\n";
 $offsets = new Kafka_OffsetRequest($conn, $topic);
 foreach($offsets->getOffsets() as $offset )
 {
     echo $offset . "\n";
-}
+}*/
 echo "\nFETCH REQUEST\n";
 $fetch = new Kafka_FetchRequest($conn, $topic, 0, new Kafka_Offset($offsetHex));
 

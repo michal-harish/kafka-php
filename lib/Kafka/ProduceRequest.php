@@ -54,11 +54,12 @@ class Kafka_ProduceRequest extends Kafka_Request
                 "Kafka Request channel is not writable, there is data to be read from previous response."
             );
         }
-        $requestSize = 2 + 2 + strlen($this->topic) + 4 + 4;
+        $messageSetSize = 0;
         foreach($this->messageQueue as $message)
         {
-            $requestSize += $message->size();
+            $messageSetSize += $message->size();
         }
+        $requestSize = 2 + 2 + strlen($this->topic) + 4 + 4 + $messageSetSize;
         $socket = $this->connection->getSocket();
         $written = fwrite($socket, pack('N', $requestSize));
         $written += fwrite($socket, pack('n', Kafka::REQUEST_KEY_PRODUCE));

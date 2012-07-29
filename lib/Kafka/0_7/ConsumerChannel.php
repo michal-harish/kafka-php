@@ -61,9 +61,12 @@ implements Kafka_IConsumer
 
         if ($offset === NULL)
         {
-            $offset = new Kafka_Offset();
-        }        
-        $this->offset = $offset;
+            $this->offset = new Kafka_Offset();
+        }       
+        else
+        {
+        	$this->offset = clone $offset;
+        }
         if (!is_numeric($maxMessageSize) || $maxMessageSize <=0)
         {
         	throw new Kafka_Exception(
@@ -120,9 +123,9 @@ implements Kafka_IConsumer
      *
      * @return Kafka_Offset
      */
-    public function getOffset()
+    public function getWatermark()
     {
-        return $this->offset;
+        return clone $this->offset;
     }
     
 	/**

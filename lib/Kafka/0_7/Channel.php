@@ -76,9 +76,7 @@ abstract class Kafka_0_7_Channel
     {
     	if (!$this->isWritable())
 		{
-			throw new Kafka_Exception(
-    	       "Kafka Request channel is not writable, maybe there is data to be read from previous response."
-		    );
+			$this->flushIncomingData();
     	}    	
     	$socket = $this->connection->getSocket();
     	$requestSize = strlen($requestData);
@@ -142,8 +140,7 @@ abstract class Kafka_0_7_Channel
         {
             $this->responseSize = array_shift(unpack('N', fread($this->socket, 4)));
             //read the errorCode
-            $errorCode = array_shift(unpack('n', fread($this->socket, 2)));
-            $this->responseSize -= 2;
+            $errorCode = array_shift(unpack('n', $this->read(2)));
             if ($errorCode != 0)
             {
                 throw new Kafka_Exception("Kafka response channel error code: $errorCode");
@@ -167,10 +164,32 @@ abstract class Kafka_0_7_Channel
         }
     }
     
+    protected function flushIncomingData()
+    {
+    	while($this->responseSize > 0 )
+    	{
+    		if (!$this->read(min($this->responseSize, 8192)))
+    		{
+    			break;
+    		}
+    	}
+    	$this->readable = FALSE;
+    	$this->responseSize = NULL;
+    	$this->readable = FALSE;
+    }
+    
     /**
      * @return int
      */
     public function getReadBytes()
+    {
+    	return $this->readBytes;
+    }
+    
+    /**
+     * @return int
+     */
+    public function getRemainingBytes()
     {
     	return $this->readBytes;
     }

@@ -45,6 +45,16 @@ interface Kafka_IConsumer
 	public function nextMessage();
 
 	/**
+	 * The last offset position after connection or reading nextMessage().
+	 * This value should be used for keeping the consumption state.
+	 * It is different from the nextMessage()->getOffset() in that
+	 * it points to the offset "after" that message.
+	 *
+	 * @return Kafka_Offset
+	 */
+	public function getWatermark();
+
+	/**
 	 * OffsetsRequest
 	 * Enter description here ...
 	 * @param unknown_type $topic

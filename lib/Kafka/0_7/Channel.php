@@ -14,9 +14,10 @@ abstract class Kafka_0_7_Channel
     private $connection;
     
     /**
+     * Connection socket.
      * @var resource
      */
-    private $socket;
+    private $socket = NULL;
 
     /**
      * Request channel state
@@ -38,6 +39,8 @@ abstract class Kafka_0_7_Channel
 
 
     /**
+     * Constructor
+     * 
      * @param Kafka $connection 
      * @param string $topic
      * @param int $partition 
@@ -47,23 +50,46 @@ abstract class Kafka_0_7_Channel
         $this->connection = $connection;
         $this->readable = FALSE;        
     }
-
+    
     /**
-     * @return boolean
+     * Destructor
      */
-    public function isReadable()
+    public function __destruct()
     {
-        return $this->readable;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isWritable()
-    {
-        return !$this->readable;
+    	$this->close();
     }
     
+    /**
+     * Close the connection(s). Must be called by the application
+     * but could be added to the __destruct method too.
+     */
+    public function close() {
+    	if (is_resource($this->socket)) {
+    		fclose($this->socket);
+    	}
+    }
+    
+    /**
+     * Set up the socket connection if not yet done.
+     * @throws Kafka_Exception
+     * @return resource $socket
+     */
+    private function createSocket()
+    {
+    	if (!is_resource($this->socket))
+    	{
+    		$this->socket = stream_socket_client(
+            	$this->connection->getConnectionString(), $errno, $errstr
+    		);
+    		if (!$this->socket) {
+    			throw new Kafka_Exception($errstr, $errno);
+    		}
+    		stream_set_timeout($this->socket, $this->connection->getTimeout());
+    		//stream_set_read_buffer($this->socket,  65535);
+    		//stream_set_write_buffer($this->socket, 65535);
+    	}
+    	return $this->socket;
+    }    
     
     /**
      * Send a bounded request.
@@ -73,8 +99,17 @@ abstract class Kafka_0_7_Channel
      */
     final protected function send($requestData, $expectsResposne = TRUE)
     {
-    	$this->socket = $this->connection->getSocket();
-    	if (!$this->isWritable())
+    	if ($this->socket === NULL)
+    	{
+    		$this->createSocket();
+    	}
+    	elseif ($this->socket === FALSE)
+    	{
+    		throw new Kafka_Exception(
+    			"Kafka channel could not be created."
+    		);    		
+    	}
+    	if ($this->readable)
 		{
 			$this->flushIncomingData();
     	}    	    	
@@ -100,7 +135,7 @@ abstract class Kafka_0_7_Channel
     {    	
     	if ($stream === NULL)
     	{
-	        if (!$this->isReadable())
+	        if (!$this->readable)
 	        {            
 	            throw new Kafka_Exception(
 	                "Kafka channel is not readable."
@@ -126,9 +161,18 @@ abstract class Kafka_0_7_Channel
      */
     final protected function hasIncomingData()
     {
-    	$this->socket = $this->connection->getSocket();
+        if ($this->socket === NULL)
+    	{
+    		$this->createSocket();
+    	}
+    	elseif ($this->socket === FALSE)
+    	{
+    		throw new Kafka_Exception(
+    			"Kafka channel could not be created."
+    		);    		
+    	}
         //check the state of the connection
-        if (!$this->isReadable())
+        if (!$this->readable)
         {            
             throw new Kafka_Exception(
                 "Request has not been sent - maybe a connection problem."
@@ -243,8 +287,7 @@ abstract class Kafka_0_7_Channel
      * @throws Kafka_Exception
      */
     final protected function loadMessage($topic, $partition, Kafka_Offset $offset, $stream = NULL)
-    {
-    	$this->socket = $this->connection->getSocket();
+    {    	
     	if ($stream === NULL)
     	{
     		$stream = $this->socket;

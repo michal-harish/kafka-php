@@ -35,13 +35,8 @@ class Kafka
     private $host;
     private $port;
     private $timeout;
-	private $kapiVersion;
-	
-    /**
-     * Connection socket.
-     * @var resource
-     */
-    private $socket = NULL;
+	private $producerClass;
+	private $consumerClass;
 
     /**
      * @param string $host
@@ -62,50 +57,40 @@ class Kafka
         $this->host = $host;
         $this->port = $port;
         $this->timeout = $timeout;       
-        //include "IOffsetRequest.php";
         if ($kapiVersion < 0.8)
         {
-        	$this->kapiImplementation = "0_7";
+        	$kapiImplementation = "0_7";
         }
-        else//if ($kapiVersion < 0.8)
+        elseif ($kapiVersion < 0.8)
         {
-        	$this->kapiImplementation = "0_8";
+        	$kapiImplementation = "0_8";
         }
-        include_once "{$this->kapiImplementation}/ProducerChannel.php";
-        include_once "{$this->kapiImplementation}/ConsumerChannel.php";
-        //include_once "{$this->kapiImplementation}/OffsetRequest.php";        
+        else
+        {
+        	throw new Kafka_Exception(
+        		"Unsupported Kafka API version $kapiVersion"
+        	);
+        }
+        include_once "{$kapiImplementation}/ProducerChannel.php";
+        $this->producerClass = "Kafka_{$kapiImplementation}_ProducerChannel";
+        include_once "{$kapiImplementation}/ConsumerChannel.php";
+        $this->consumerClass = "Kafka_{$kapiImplementation}_ConsumerChannel";       
     }
-
+    
     /**
-     * Set up the socket connection if not yet done.
-     * @throws Kafka_Exception
-     * @return resource $socket
+     * @return string "protocol://<host>:<port>";
      */
-    public function getSocket()
+    public function getConnectionString()
     {
-        if (!is_resource($this->socket))
-        {
-            $this->socket = stream_socket_client(
-                'tcp://' . $this->host . ':' . $this->port, $errno, $errstr
-            );
-            if (!$this->socket) {
-                throw new Kafka_Exception($errstr, $errno);
-            }
-            stream_set_timeout($this->socket, $this->timeout);
-            //stream_set_read_buffer($this->connection,  65535);
-            //stream_set_write_buffer($this->connection, 65535);
-        }
-        return $this->socket;
+    	return "tcp://{$this->host}:{$this->port}";
     }
-
+    
     /**
-     * Close the connection(s). Must be called by the application
-     * but could be added to the __destruct method too.
+     * @return int
      */
-    public function close() {
-        if (is_resource($this->socket)) {
-            fclose($this->socket);
-        }
+    public function getTimeout()
+    {
+    	return $this->timeout;
     }
 
     /**
@@ -113,7 +98,7 @@ class Kafka
      */
     public function createProducer()
     {
-    	$producerClass = "Kafka_{$this->kapiImplementation}_ProducerChannel";
+    	$producerClass = $this->producerClass;
     	return new $producerClass($this);
     }
     
@@ -122,7 +107,7 @@ class Kafka
      */
     public function createConsumer()
     {
-    	$consumerClass = "Kafka_{$this->kapiImplementation}_ConsumerChannel";
+    	$consumerClass = $this->consumerClass;
     	return new $consumerClass($this);
     }
 }

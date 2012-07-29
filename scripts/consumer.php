@@ -1,4 +1,5 @@
 <?php
+$time = microtime(true);
 //bootstrap 
 chdir(dirname(__FILE__));
 require "../lib/Kafka/Kafka.php";
@@ -33,10 +34,11 @@ if (!$topic)
     exit("\nUsage: php consumer.php <topicname> [--offset <hex_offset>] [--broker <kafka_host:kafka_port>]\n\n");
 }
 
-//create connection and do offsets request and fetch request
+//connection
 $kafka = new Kafka($kafkaHost, $kafkaPort);
-
+//consumer
 $consumer = $kafka->createConsumer();
+//offsets request
 echo "\nOFFSETS REQUEST\n\n";
 foreach($consumer->offsets($topic, 0) as $offsetItem )
 {
@@ -44,7 +46,7 @@ foreach($consumer->offsets($topic, 0) as $offsetItem )
 }
 //initialize watermark offset
 $watermark = new Kafka_Offset($offsetHex);
-//initialize total processed counter
+//fetch request
 $processed = 0;
 while(TRUE)
 {	
@@ -74,9 +76,8 @@ while(TRUE)
 		    	* and we can consider the last message 'processed' 
 		    	*******************************/		    	 
 		    	$consistent = TRUE;
-		    	$processed++;
-		    	
-		        echo "\n[offset:" . $message->offset() . " watermark: $watermark] " . $message->payload() ;	        
+		    	$processed++;		    		    	
+		        echo "\n[offset:" . $message->offset() . " watermark: $watermark] " . $message->payload() ;		        
 		    }		    
 		    echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $processed, NEW WATERMARK: " . $watermark . "\n\n";
 		    //if there's no more messages without error then it's the last message in the topic
@@ -95,6 +96,6 @@ while(TRUE)
 }	
 
 //go home
-$kafka->close();
+$consumer->close();
 
-
+echo "PROCESSING TIME: " . (microtime(true) - $time);

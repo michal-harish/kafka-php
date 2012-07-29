@@ -7,7 +7,7 @@ $topic = isset($_SERVER['argv'][1])
     ? $_SERVER['argv'][1] 
     : exit("\nUsage: php producer.php <topic_name>\n\n");
 //connection
-$kafka = new Kafka('localhost', 9092, 6, 0.71);
+$kafka = new Kafka('localhost', 9092, 6);
 //request channel
 $producer = $kafka->createProducer();
 //add a few messages

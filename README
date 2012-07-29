@@ -10,7 +10,7 @@ so the api doesn't need to follow the scala/java object graph and can be much si
     - offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
     - gzip working correctly both ways, including the pre-compression message header
     - crc32 check working
-    - ProduceRequest and FetchRequests can use wire format 0 and 1
+    - Producers and Consumers are abstracted to allow for changes in Kafka API without disrupting the client code 
     - Broker abstraction for different connection strategies
     - OffsetRequest workaround for 64-bit unix timestamp
     - Produce Request only checks correct bytes were sent (ack not available)

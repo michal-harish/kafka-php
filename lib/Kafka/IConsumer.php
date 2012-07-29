@@ -18,6 +18,7 @@ interface Kafka_IConsumer
 	
 	/**
 	 * FetchRequest
+	 * 
 	 * @param string $topic
 	 * @param int $partition
 	 * @param Kafka_Offset $offset - Offset to fetch messages from
@@ -56,11 +57,11 @@ interface Kafka_IConsumer
 
 	/**
 	 * OffsetsRequest
-	 * Enter description here ...
-	 * @param unknown_type $topic
-	 * @param unknown_type $partition
-	 * @param unknown_type $time
-	 * @param unknown_type $maxNumOffsets
+	 * 
+	 * @param string $topic
+	 * @param int $partition
+	 * @param mixed $time - can be unixtimestamp or hex offset
+	 * @param int $maxNumOffsets
 	 */
 	public function offsets(
 		$topic,

@@ -45,8 +45,7 @@ abstract class Kafka_0_7_Channel
     public function __construct(Kafka $connection)
     {
         $this->connection = $connection;
-        $this->readable = FALSE;
-        $this->socket = $connection->getSocket();
+        $this->readable = FALSE;        
     }
 
     /**
@@ -74,14 +73,14 @@ abstract class Kafka_0_7_Channel
      */
     final protected function send($requestData, $expectsResposne = TRUE)
     {
+    	$this->socket = $this->connection->getSocket();
     	if (!$this->isWritable())
 		{
 			$this->flushIncomingData();
-    	}    	
-    	$socket = $this->connection->getSocket();
+    	}    	    	
     	$requestSize = strlen($requestData);
-    	$written = fwrite($socket, pack('N', $requestSize));
-    	$written += fwrite($socket, $requestData);
+    	$written = fwrite($this->socket, pack('N', $requestSize));
+    	$written += fwrite($this->socket, $requestData);
     	if ($written  != $requestSize + 4)
     	{
     		throw new Kafka_Exception(
@@ -98,7 +97,7 @@ abstract class Kafka_0_7_Channel
      * @throws Kafka_Exception
      */
     final protected function read($size, $stream = NULL)
-    {
+    {    	
     	if ($stream === NULL)
     	{
 	        if (!$this->isReadable())
@@ -106,7 +105,7 @@ abstract class Kafka_0_7_Channel
 	            throw new Kafka_Exception(
 	                "Kafka channel is not readable."
 	            );
-	        }
+	        }	        
 	        $stream = $this->socket;
     	}
         $result = fread($stream, $size);
@@ -127,6 +126,7 @@ abstract class Kafka_0_7_Channel
      */
     final protected function hasIncomingData()
     {
+    	$this->socket = $this->connection->getSocket();
         //check the state of the connection
         if (!$this->isReadable())
         {            
@@ -135,7 +135,7 @@ abstract class Kafka_0_7_Channel
             );
             $this->responseSize = NULL;
         }        
-        //has the response size been read yet ?
+        //has the response size been read yet ?       
         if ($this->responseSize === NULL)
         {
             $this->responseSize = array_shift(unpack('N', fread($this->socket, 4)));
@@ -244,7 +244,7 @@ abstract class Kafka_0_7_Channel
      */
     final protected function loadMessage($topic, $partition, Kafka_Offset $offset, $stream = NULL)
     {
-    	
+    	$this->socket = $this->connection->getSocket();
     	if ($stream === NULL)
     	{
     		$stream = $this->socket;

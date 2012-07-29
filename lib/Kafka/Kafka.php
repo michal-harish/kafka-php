@@ -35,15 +35,15 @@ class Kafka
     private $host;
     private $port;
     private $timeout;
-	private $producerClass;
-	private $consumerClass;
+    private $producerClass;
+    private $consumerClass;
 
     /**
      * @param string $host
      * @param int $port
      * @param int $timeout
      * @param int $kapiVersion Kafka API Version
-     * 	- the client currently recoginzes difference in the wire
+     *     - the client currently recoginzes difference in the wire
      *    format prior to the version 0.8 and the versioned
      *    requests introduced in 0.8
      */
@@ -59,17 +59,17 @@ class Kafka
         $this->timeout = $timeout;       
         if ($kapiVersion < 0.8)
         {
-        	$kapiImplementation = "0_7";
+            $kapiImplementation = "0_7";
         }
         elseif ($kapiVersion < 0.8)
         {
-        	$kapiImplementation = "0_8";
+            $kapiImplementation = "0_8";
         }
         else
         {
-        	throw new Kafka_Exception(
-        		"Unsupported Kafka API version $kapiVersion"
-        	);
+            throw new Kafka_Exception(
+                "Unsupported Kafka API version $kapiVersion"
+            );
         }
         include_once "{$kapiImplementation}/ProducerChannel.php";
         $this->producerClass = "Kafka_{$kapiImplementation}_ProducerChannel";
@@ -82,7 +82,7 @@ class Kafka
      */
     public function getConnectionString()
     {
-    	return "tcp://{$this->host}:{$this->port}";
+        return "tcp://{$this->host}:{$this->port}";
     }
     
     /**
@@ -90,7 +90,7 @@ class Kafka
      */
     public function getTimeout()
     {
-    	return $this->timeout;
+        return $this->timeout;
     }
 
     /**
@@ -98,8 +98,8 @@ class Kafka
      */
     public function createProducer()
     {
-    	$producerClass = $this->producerClass;
-    	return new $producerClass($this);
+        $producerClass = $this->producerClass;
+        return new $producerClass($this);
     }
     
     /**
@@ -107,7 +107,7 @@ class Kafka
      */
     public function createConsumer()
     {
-    	$consumerClass = $this->consumerClass;
-    	return new $consumerClass($this);
+        $consumerClass = $this->consumerClass;
+        return new $consumerClass($this);
     }
 }

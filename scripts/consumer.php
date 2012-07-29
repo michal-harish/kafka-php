@@ -62,7 +62,7 @@ while(TRUE)
 		    	{
 		    		throw new Exception('Simulation of consumer failure in a consistent state.');
 		    	}
-		    	/***********************************
+		    	/*****************************************************************************
 		    	 * Start processing the message.. */
 		    	$consistent = FALSE;
 		    	if (rand(0,20) == 0)
@@ -72,9 +72,9 @@ while(TRUE)
 		    	//if processing went fine, we get the new new watermark, but it's not over yet 		    	
 		    	$watermark = $consumer->getWatermark();		    			    
 		    	/* Now store the watermark somerwhere..
-		    	* Only when the new watermark has been stored, we're consistent again
-		    	* and we can consider the last message 'processed' 
-		    	*******************************/		    	 
+		    	** Only when the new watermark has been stored, we're consistent again
+		    	** and we can consider the last message 'processed' 
+		    	******************************************************************************/		    	 
 		    	$consistent = TRUE;
 		    	$processed++;		    		    	
 		        echo "\n[offset:" . $message->offset() . " watermark: $watermark] " . $message->payload() ;		        
@@ -87,7 +87,9 @@ while(TRUE)
 	   		echo "\nERROR PROCESSING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
 	   		if (!$consistent)
 	   		{
-	   			//compensate for the inconsistency, e.g. by reversing what was changed or else 
+	   			/******************************************************************************
+	   			* compensate for the inconsistency, e.g. by reversing what was modified
+	   			******************************************************************************/ 
 	   		}
 	   		echo "\n";
 	   	}   	

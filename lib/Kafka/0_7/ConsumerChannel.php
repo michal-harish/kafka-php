@@ -12,15 +12,15 @@ class Kafka_0_7_ConsumerChannel extends Kafka_0_7_Channel
 implements Kafka_IConsumer
 {
 
-	/**
-	 * @var string
-	 */
-	private $topic;
-	
-	/**
-	 * @var int
-	 */
-	private $partition;
+    /**
+     * @var string
+     */
+    private $topic;
+    
+    /**
+     * @var int
+     */
+    private $partition;
 
     /**
      * @var Kafka_Offset
@@ -44,18 +44,18 @@ implements Kafka_IConsumer
      * @return bool Ready-to-read state
      */
     public function fetch( 
-    	$topic,
+        $topic,
         $partition = 0,
         Kafka_Offset $offset = NULL, 
         $maxMessageSize = 1000000
     )
     {
-    	if (!$topic || !is_string($topic))
-    	{
-    		throw new Kafka_Exception(
-    	   		"Topic must be a non-empty string."
-    		);
-    	}
+        if (!$topic || !is_string($topic))
+        {
+            throw new Kafka_Exception(
+                   "Topic must be a non-empty string."
+            );
+        }
         $this->topic = $topic;
         $this->partition = $partition;
 
@@ -65,13 +65,13 @@ implements Kafka_IConsumer
         }       
         else
         {
-        	$this->offset = clone $offset;
+            $this->offset = clone $offset;
         }
         if (!is_numeric($maxMessageSize) || $maxMessageSize <=0)
         {
-        	throw new Kafka_Exception(
-        		"Maximum fetch size must be a positive integer."
-        	);
+            throw new Kafka_Exception(
+                "Maximum fetch size must be a positive integer."
+            );
         }        
         //format the 0.7 fetch request 
         $data = pack('n', Kafka::REQUEST_KEY_FETCH);//short
@@ -80,8 +80,8 @@ implements Kafka_IConsumer
         $data .= $this->offset->getData();//bigint
         $data .= pack('N', $maxMessageSize); //int
         if ($this->send($data))
-        {        	
-        	return TRUE;
+        {            
+            return TRUE;
         }        
     }
 
@@ -98,11 +98,11 @@ implements Kafka_IConsumer
     public function nextMessage()
     {
         if ($this->hasIncomingData())
-        {        	
+        {            
             $message = $this->loadMessage(
-            	$this->topic,
-            	$this->partition,
-            	clone $this->offset                
+                $this->topic,
+                $this->partition,
+                clone $this->offset                
             );
             //in kapi-0.7 the message offset is incremented by the total bytes occupied by the message in the kafka log
             $this->offset->addInt($this->getReadBytes());
@@ -128,57 +128,57 @@ implements Kafka_IConsumer
         return clone $this->offset;
     }
     
-	/**
-	 * OffsetsRequest
-	 * Enter description here ...
-	 * @param string $topic
-	 * @param int $partition
-	 * @param mixed $time 
-	 * @param unknown_type $maxNumOffsets
-	 */
-	public function offsets(
-		$topic,
-		$partition = 0,
-		$time = Kafka::OFFSETS_LATEST,
-		$maxNumOffsets = 2
-	)
-	{
-	    $data = pack('n', Kafka::REQUEST_KEY_OFFSETS);
-	    $data .= pack('n', strlen($topic)) . $topic;
-	    $data .= pack('N', $partition);
-	    if (is_string($time))
-	    {
-	    	//convert hex constant to a long offset
-	    	$offset = new Kafka_Offset($time);
-	    }
-	    else
-	    {	//make 64-bit unix timestamp offset
-		    $offset = new Kafka_Offset();
-		    for($i=0; $i<1000 * 1; $i++)
-		    {
-		    	$offset->addInt($time);
-		    }
-	    }
-	    $data .= $offset->getData();
-	    $data .= pack('N', $maxNumOffsets);
-	    $this->send($data);
-	    if ($this->hasIncomingData())
-	    {
-	    	$offsetsLength = array_shift(unpack('N', $this->read(4)));
-	    	if ($offsetsLength>0)
-	    	{
-	    		$offsets = array_fill(0, $offsetsLength, NULL);
-	    		for($i=0; $i<$offsetsLength; $i++)
-	    		{
-		    		$offset = Kafka_Offset::createFromData($this->read(8));
-		    		$offsets[$i] = $offset;
-	    		}
-	    		if (!$this->hasIncomingData())
-	    		{
-	    			return $offsets;
-	    		}	    		
-	    	}
-    	}
-   		return FALSE;
-	}
+    /**
+     * OffsetsRequest
+     * Enter description here ...
+     * @param string $topic
+     * @param int $partition
+     * @param mixed $time 
+     * @param unknown_type $maxNumOffsets
+     */
+    public function offsets(
+        $topic,
+        $partition = 0,
+        $time = Kafka::OFFSETS_LATEST,
+        $maxNumOffsets = 2
+    )
+    {
+        $data = pack('n', Kafka::REQUEST_KEY_OFFSETS);
+        $data .= pack('n', strlen($topic)) . $topic;
+        $data .= pack('N', $partition);
+        if (is_string($time))
+        {
+            //convert hex constant to a long offset
+            $offset = new Kafka_Offset($time);
+        }
+        else
+        {    //make 64-bit unix timestamp offset
+            $offset = new Kafka_Offset();
+            for($i=0; $i<1000 * 1; $i++)
+            {
+                $offset->addInt($time);
+            }
+        }
+        $data .= $offset->getData();
+        $data .= pack('N', $maxNumOffsets);
+        $this->send($data);
+        if ($this->hasIncomingData())
+        {
+            $offsetsLength = array_shift(unpack('N', $this->read(4)));
+            if ($offsetsLength>0)
+            {
+                $offsets = array_fill(0, $offsetsLength, NULL);
+                for($i=0; $i<$offsetsLength; $i++)
+                {
+                    $offset = Kafka_Offset::createFromData($this->read(8));
+                    $offsets[$i] = $offset;
+                }
+                if (!$this->hasIncomingData())
+                {
+                    return $offsets;
+                }                
+            }
+        }
+           return FALSE;
+    }
 }

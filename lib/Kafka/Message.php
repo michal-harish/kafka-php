@@ -8,9 +8,9 @@
  */
 
 class Kafka_Message
-{		
-	private $topic;
-	private $partition;
+{        
+    private $topic;
+    private $partition;
     private $offset;
     private $compression;
     private $payload;
@@ -25,28 +25,28 @@ class Kafka_Message
      * @throws Kafka_Exception
      */
     public function __construct(
-    	$topic,
-    	$partition,        
+        $topic,
+        $partition,        
         $payload,
-    	$compression = Kafka::COMPRESSION_NONE,
+        $compression = Kafka::COMPRESSION_NONE,
         Kafka_Offset $offset = NULL
     )
     {
-		if (!$topic)
-		{
-			throw new Kafka_Exception("Topic name cannot be an empty string.");
-		}
-		$this->topic = $topic;
-		if (!is_numeric($partition) || $partition < 0)
-		{
-			throw new Kafka_Exception("Partition must be a positive integer or 0.");
-		}		
-    	$this->topic = $topic;
-    	$this->partition = $partition;
-    	if ($offset === NULL)
-    	{
-    		new Kafka_Offset();
-    	}
+        if (!$topic)
+        {
+            throw new Kafka_Exception("Topic name cannot be an empty string.");
+        }
+        $this->topic = $topic;
+        if (!is_numeric($partition) || $partition < 0)
+        {
+            throw new Kafka_Exception("Partition must be a positive integer or 0.");
+        }        
+        $this->topic = $topic;
+        $this->partition = $partition;
+        if ($offset === NULL)
+        {
+            new Kafka_Offset();
+        }
         $this->offset = $offset;
         $this->compression = $compression;
         $this->payload = $payload;
@@ -57,7 +57,7 @@ class Kafka_Message
      */
     final public function topic()
     {
-    	return $this->topic;
+        return $this->topic;
     }
     
     /**
@@ -65,7 +65,7 @@ class Kafka_Message
      */
     final public function partition()
     {
-    	return $this->partition;
+        return $this->partition;
     }
     
     /**
@@ -82,7 +82,7 @@ class Kafka_Message
      */
     final public function compression()
     {
-    	return $this->compression;
+        return $this->compression;
     }
 
     /**

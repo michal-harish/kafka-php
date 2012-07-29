@@ -24,6 +24,12 @@ Examples
 
 TODOs
 
-IN PROGRESS - implement the new versioned wire format 0.8 and acknowledgements - waiting for stable branch
-TODO Snappy compression (could not compile snappy.so on 64-bit) 
+IN PROGRESS - profiling & optimization
+    - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
+    - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)
+    - ProducerChannel - profile production (compression & serialization cost, )
+IN PROGRESS - implement the new versioned wire format 0.8 and acknowledgements 
+    - waiting for a stable 0.8 candidate
+TODO Snappy compression     
+    - could not compile snappy.so on 64-bit) 
 

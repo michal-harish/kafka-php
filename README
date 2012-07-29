@@ -24,7 +24,9 @@ Examples
 
 TODOs
 
+IN PROGRESS - implement versioned wire format 0.8
 IN PROGRESS maxSize check when fetching and throw Kafka_Exception when overflown
 IN PROGRESS add getTopic() for Message 
 TODO Snappy compression (could not compile snappy.so on 64-bit) 
 TODO implement produce acknowledgement once implemented in kafka (maybe add look at the jira to do it)
+

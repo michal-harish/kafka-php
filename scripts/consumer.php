@@ -34,29 +34,31 @@ if (!$topic)
 }
 
 //create connection and do offsets request and fetch request
-$conn = new Kafka($kafkaHost, $kafkaPort);
-/*
+$kafka = new Kafka($kafkaHost, $kafkaPort);
+
+$consumer = $kafka->createConsumer();
 echo "\nOFFSETS REQUEST\n\n";
-$offsets = new Kafka_OffsetRequest($conn, $topic);
-foreach($offsets->getOffsets() as $offset )
+foreach($consumer->offsets($topic, 0) as $offset )
 {
     echo $offset . "\n";
-}*/
+}
 echo "\nFETCH REQUEST\n";
-$fetch = new Kafka_FetchRequest($conn, $topic, 0, new Kafka_Offset($offsetHex));
 
-//while(true)
+if ($consumer->fetch($topic, 0, new Kafka_Offset($offsetHex)))
 {
-    while ($message = $fetch->nextMessage())
-    {
-        echo "\n[" . $message->getOffset() . "] " . $message->getPayload();
-    }
-    //usleep(250);
+	//while(true)
+	{
+	    while ($message = $consumer->nextMessage())
+	    {
+	        echo "\n[" . $message->offset() . "] " . $message->payload();
+	    }
+	    //usleep(250);
+	}
+	
+	echo "\nNo more messages - new watermark offset: " . $consumer->getOffset() . "\n\n";
 }
 
-echo "\nNo more messages - new watermark offset: " . $fetch->getOffset() . "\n\n";
-
 //go home
-$conn->close();
+$kafka->close();
 
 

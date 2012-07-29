@@ -7,23 +7,34 @@ $topic = isset($_SERVER['argv'][1])
     ? $_SERVER['argv'][1] 
     : exit("\nUsage: php producer.php <topic_name>\n\n");
 //connection
-$conn = new Kafka('localhost', 9092);
+$kafka = new Kafka('localhost', 9092, 6, 0.7);
 //request channel
-$request = new Kafka_ProduceRequest($conn, $topic);
+$producer = $kafka->createProducer();
 //add a few messages
-$request->add(Kafka_Message::create(
-    'MESSAGE 1 - passed as uncompressed message object',
-    Kafka::COMPRESSION_NONE
-));
-$request->add(Kafka_Message::create(
-    'MESSAGE 2 - passed as compressed message object ',
-    Kafka::COMPRESSION_GZIP
-));
-$request->add('MESSAGE 3 - just passed as string, using default compression');
-$request->add('MESSAGE 4 - another one passed as string, using default compression');
-if ($request->produce('Message 5'))
+$producer->add(
+	new Kafka_Message(
+		$topic, 0,	
+	    'MESSAGE 1 - passed as uncompressed message object',
+	    Kafka::COMPRESSION_NONE
+	)
+);
+$producer->add(
+	new Kafka_Message(
+		$topic, 0,
+	    'MESSAGE 2 - passed as compressed message object ',
+	    Kafka::COMPRESSION_GZIP
+	)
+);
+$producer->add(
+	new Kafka_Message(
+		'test', 0,
+	    'MESSAGE 2 - passed as compressed message object to a different topic `test`',
+	    Kafka::COMPRESSION_GZIP
+	)
+);
+if ($producer->produce())
 {
-    echo "\nSuccesfully published (as far as sending over socket is concerned right now).\n\n";
+    echo "\nPublished.\n\n";
 }
 //go home
-$conn->close();
+$kafka->close();

@@ -17,13 +17,13 @@ class Kafka_Offset
 	public $data;
 	
 	/**
-	 * Creates an instance of an Offset from a stream.
-	 * @param resource $stream
+	 * Creates an instance of an Offset from binary data
+	 * @param string $data
 	 */
-	public static function createFromStream($stream)
+	public static function createFromData($data)
 	{
 		$offset = new Kafka_Offset();
-		$offset->data = fread($stream, 8);
+		$offset->data = $data;
 		return $offset;
 	}
 	
@@ -56,22 +56,12 @@ class Kafka_Offset
 	}	
 	
 	/**
-	 * Write packet into a stream
-	 * @param resource $stream
-	 * @return int $written number of bytes succesfully sent
+	 * Return raw offset data.
+	 * @return string[8]
 	 */
-	public function writeTo($stream)
+	public function getData()
 	{
-		return fwrite($stream, $this->data, 8);
-	}
-
-	/**
-	 * Provide information about size of the packet 
-	 * for request size calculation.
-	 */
-	public function size()
-	{
-		return 8;
+		return $this->data;
 	}
 	
 	/**

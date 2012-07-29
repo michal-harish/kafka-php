@@ -8,97 +8,97 @@
  */
 
 class Kafka_Message
-{
+{		
+	private $topic;
+	private $partition;
     private $offset;
-    private $magic;
     private $compression;
     private $payload;
-    private $compressedPayload; 
     /**
      * Constructor is private used by the static creator methods below.
      * 
-     * @param Kafka_Offset $offset
-     * @param int $size
-     * @param int $magic
-     * @param int $compression
-     * @param int $crc32
+     * @param string $topic
+     * @param int $partition
      * @param string $payload
+     * @param int $compression
+     * @param Kafka_Offset $offset
      * @throws Kafka_Exception
      */
-    private function __construct(
-        Kafka_Offset $offset,
-        $magic,
-        $compression,
+    public function __construct(
+    	$topic,
+    	$partition,        
         $payload,
-        $compressedPayload
+    	$compression = Kafka::COMPRESSION_NONE,
+        Kafka_Offset $offset = NULL
     )
     {
+		if (!$topic)
+		{
+			throw new Kafka_Exception("Topic name cannot be an empty string.");
+		}
+		$this->topic = $topic;
+		if (!is_numeric($partition) || $partition < 0)
+		{
+			throw new Kafka_Exception("Partition must be a positive integer or 0.");
+		}		
+    	$this->topic = $topic;
+    	$this->partition = $partition;
+    	if ($offset === NULL)
+    	{
+    		new Kafka_Offset();
+    	}
         $this->offset = $offset;
-        $this->magic = $magic;
         $this->compression = $compression;
         $this->payload = $payload;
-        $this->compressedPayload = $compressedPayload;
     }
 
+    /**
+     * @return string
+     */
+    final public function topic()
+    {
+    	return $this->topic;
+    }
+    
+    /**
+     * @return partition
+     */
+    final public function partition()
+    {
+    	return $this->partition;
+    }
+    
     /**
      * Final value of the uncompressed payload
      * @return string
      */
-    final public function getPayload()
+    final public function payload()
     {
         return $this->payload;
+    }
+
+    /**
+     * @return int
+     */
+    final public function compression()
+    {
+    	return $this->compression;
     }
 
     /**
      * Final information about the message offset in the broker log.
      * @return Kafka_Offset
      */
-    final public function getOffset()
+    final public function offset()
     {
         return $this->offset;
-    }
-
-    /**
-     * The total packet size information, not the payload size.
-     * Payload size can be done simply str_len($message->payload())
-     * @return int
-     */
-    public function size()
-    {
-        switch ($this->magic)
-        {
-            case Kafka::MAGIC_0:
-                return 5 + strlen($this->compressedPayload) + 4;
-                break;
-            case Kafka::MAGIC_1:
-                return 6 + strlen($this->compressedPayload) + 4;
-                break;
-        }
-    }
-
-    /**
-     * Write message packet into a stream (mostly request socket)
-     * @param resource $stream
-     * @return int $written number of bytes succesfully sent
-     */
-    public function writeTo($stream)
-    {
-        $written = fwrite($stream, pack('N', $this->size() - 4)); // message bound size
-        $written += fwrite($stream, pack('C', Kafka::MAGIC_1)); 
-        if ($this->magic == Kafka::MAGIC_1 )
-        {
-            $written += fwrite($stream, pack('C', $this->compression)); 
-        }
-        $written += fwrite($stream, pack('N', crc32($this->compressedPayload)));
-        $written += fwrite($stream, $this->compressedPayload);
-        return $written;
     }
 
     /**
     * Creates an instance of a Message from a response stream.
     * @param resource $stream
     * @param Kafka_Offset $offset
-    */
+    *
     public static function createFromStream($stream, Kafka_Offset $offset)
     {
         if (!$size = @unpack('N', fread($stream, 4)))
@@ -269,39 +269,5 @@ class Kafka_Message
         );
         return $result;
     }
-
-    public static function create($payload, $compression = Kafka::COMPRESSION_GZIP)
-    {
-        switch($compression)
-        {
-            case Kafka::COMPRESSION_NONE: 
-                $compressedPayload = &$payload; 
-                break;
-            case Kafka::COMPRESSION_GZIP:
-                //Wrap payload as a non-compressed kafka message.
-                //This is probably a bug in Kafka where
-                //the bytearray passed to compression util contains
-                //the message header. 
-                $innerMessage = self::create($payload, Kafka::COMPRESSION_NONE);
-                $wrappedPayload = fopen('php://temp', 'wr');
-                $innerMessage->writeTo($wrappedPayload);
-                rewind($wrappedPayload);
-                //gzip the wrappedPayload
-                $compressedPayload = gzencode(stream_get_contents($wrappedPayload));
-                break;
-            case Kafka::COMPRESSION_SNAPPY:
-                throw new Kafka_Exception("Snappy compression not yet implemented in php client");
-                break;
-            default:
-                throw new Kafka_Exception("Unknown kafka compression $compression");
-                break;
-        }
-        return new Kafka_Message(
-            new Kafka_Offset(),
-            Kafka::MAGIC_1,
-            $compression,
-            $payload,
-            $compressedPayload
-        );
-    }
+    */    
 }

@@ -10,10 +10,8 @@
 include "Exception.php";
 include "Offset.php";
 include "Message.php";
-include "Request.php";
-include "OffsetRequest.php";
-include "FetchRequest.php";
-include "ProduceRequest.php";
+include "IProducer.php";
+include "IConsumer.php";
 
 class Kafka
 {
@@ -37,7 +35,8 @@ class Kafka
     private $host;
     private $port;
     private $timeout;
-
+	private $kapiVersion;
+	
     /**
      * Connection socket.
      * @var resource
@@ -48,16 +47,33 @@ class Kafka
      * @param string $host
      * @param int $port
      * @param int $timeout
+     * @param int $kapiVersion Kafka API Version
+     * 	- the client currently recoginzes difference in the wire
+     *    format prior to the version 0.8 and the versioned
+     *    requests introduced in 0.8
      */
     public function __construct(
         $host = 'localhost',
         $port = 9092,
-        $timeout = 6
+        $timeout = 6,
+        $kapiVersion = 0.7
     )
     {
         $this->host = $host;
         $this->port = $port;
-        $this->timeout = $timeout;
+        $this->timeout = $timeout;       
+        //include "IOffsetRequest.php";
+        if ($kapiVersion < 0.8)
+        {
+        	$this->kapiImplementation = "0_7";
+        }
+        else//if ($kapiVersion < 0.8)
+        {
+        	$this->kapiImplementation = "0_8";
+        }
+        include_once "{$this->kapiImplementation}/ProducerChannel.php";
+        include_once "{$this->kapiImplementation}/ConsumerChannel.php";
+        //include_once "{$this->kapiImplementation}/OffsetRequest.php";        
     }
 
     /**
@@ -90,5 +106,23 @@ class Kafka
         if (is_resource($this->socket)) {
             fclose($this->socket);
         }
+    }
+
+    /**
+     * @return Kafka_IProducer
+     */
+    public function createProducer()
+    {
+    	$producerClass = "Kafka_{$this->kapiImplementation}_ProducerChannel";
+    	return new $producerClass($this);
+    }
+    
+    /**
+     * @return Kafka_IConsumer
+     */
+    public function createConsumer()
+    {
+    	$consumerClass = "Kafka_{$this->kapiImplementation}_ConsumerChannel";
+    	return new $consumerClass($this);
     }
 }

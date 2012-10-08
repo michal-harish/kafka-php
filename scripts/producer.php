@@ -12,25 +12,25 @@ $kafka = new Kafka('localhost', 9092, 6, 0.71);
 $producer = $kafka->createProducer();
 //add a few messages
 $producer->add(
-	new Kafka_Message(
-		$topic, 0,	
-	    'MESSAGE 1 - passed as uncompressed message object',
-	    Kafka::COMPRESSION_NONE
-	)
+    new Kafka_Message(
+        $topic, 0,    
+        'MESSAGE 1 - passed as uncompressed message object',
+        Kafka::COMPRESSION_NONE
+    )
 );
 $producer->add(
-	new Kafka_Message(
-		$topic, 0,
-	    'MESSAGE 2 - passed as compressed message object ',
-	    Kafka::COMPRESSION_GZIP
-	)
+    new Kafka_Message(
+        $topic, 0,
+        'MESSAGE 2 - passed as compressed message object ',
+        Kafka::COMPRESSION_GZIP
+    )
 );
 $producer->add(
-	new Kafka_Message(
-		'test', 0,
-	    'MESSAGE 2 - passed as compressed message object to a different topic `test`',
-	    Kafka::COMPRESSION_GZIP
-	)
+    new Kafka_Message(
+        'test', 0,
+        'MESSAGE 2 - passed as compressed message object to a different topic `test`',
+        Kafka::COMPRESSION_GZIP
+    )
 );
 if ($producer->produce())
 {

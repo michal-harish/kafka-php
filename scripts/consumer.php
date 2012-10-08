@@ -54,56 +54,56 @@ $totalProcessed = 0;
 echo "\nFETCH REQUEST FROM WATERMARK OFFSET: $watermark\n";
 if ($consumer->fetch($topic, 0, $watermark))
 {
-	try {			
-	    while ($message = $consumer->nextMessage())
-	    {
-	    	$consistent = TRUE;
-	    	$processed = FALSE;
-	    	do {
-		    	try {
-			    	//no state has been modified yet, but there can be errors when fetching etc.		    			    	
-			    	if (rand(0,100) == 0)
-			    	{
-			    		throw new Exception('Simulation of consumer failure in a consistent state.');
-			    	}
-			    	/*****************************************************************************
-			    	 * Start processing the message.. */
-			    	$consistent = FALSE;
-			    	if (rand(0,200) == 0)
-			    	{
-			    		throw new Exception('Simulation of consumer failure - THE ERROR OCCURED WHILE THERE IS AN INCONSISTENT STATE CREATED BY PARTIALLY PROCESSED MESSAGE!');
-			    	}		    	
-			    	//if processing went fine, we get the new new watermark, but it's not over yet 		    	
-			    	$watermark = $consumer->getWatermark();		    			    
-			    	/* Now store the watermark somerwhere..
-			    	** Only when the new watermark has been stored, we're consistent again
-			    	** and we can consider the last message 'processed' 
-			    	******************************************************************************/		    	 
-			    	$consistent = TRUE;
-			    	$processed = TRUE;
-			        echo "\n[offset:" . $message->offset() . " watermark: $watermark] " . $message->payload() ;
-		    	} catch (Exception $e)
-			   	{
-			   		echo "\nERROR PROCESSING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
-			   		if (!$consistent)
-			   		{
-			   			/******************************************************************************
-			   			* compensate for the inconsistency, e.g. by reversing what was modified
-			   			******************************************************************************/
-			   			$consistent = TRUE;
-			   		}
-			   		echo "\n";
-			   	}   
-	    	} while(!$processed);		        
-		   	$totalProcessed++;
-	    }		    
-	    echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $totalProcessed, NEW WATERMARK: " . $watermark . "\n\n";
-   	} 
-   	catch (Exception $e)
-   	{
-   		echo "\nERROR FETCHING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
-   		
-   	}   	
+    try {
+        while ($message = $consumer->nextMessage())
+        {
+            $consistent = TRUE;
+            $processed = FALSE;
+            do {
+                try {
+                    //no state has been modified yet, but there can be errors when fetching etc.                                
+                    if (rand(0,100) == 0)
+                    {
+                        throw new Exception('Simulation of consumer failure in a consistent state.');
+                    }
+                    /*****************************************************************************
+                     * Start processing the message.. */
+                    $consistent = FALSE;
+                    if (rand(0,200) == 0)
+                    {
+                        throw new Exception('Simulation of consumer failure - THE ERROR OCCURED WHILE THERE IS AN INCONSISTENT STATE CREATED BY PARTIALLY PROCESSED MESSAGE!');
+                    }
+                    //if processing went fine, we get the new new watermark, but it's not over yet                 
+                    $watermark = $consumer->getWatermark();                            
+                    /* Now store the watermark somerwhere..
+                    ** Only when the new watermark has been stored, we're consistent again
+                    ** and we can consider the last message 'processed' 
+                    ******************************************************************************/                 
+                    $consistent = TRUE;
+                    $processed = TRUE;
+                    $payload = $message->payload();
+                    echo "\n[offset:" . $message->offset() . " watermark: $watermark]" . $message->payload() ;
+                } catch (Exception $e)
+                   {
+                       echo "\nERROR PROCESSING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
+                       if (!$consistent)
+                       {
+                           /******************************************************************************
+                           * compensate for the inconsistency, e.g. by reversing what was modified
+                           ******************************************************************************/
+                           $consistent = TRUE;
+                       }
+                       echo "\n";
+                   }
+            } while(!$processed);
+               $totalProcessed++;
+        }
+        echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $totalProcessed, NEW WATERMARK: " . $watermark . "\n\n";
+       } 
+       catch (Exception $e)
+       {
+           echo "\nERROR FETCHING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
+       }
 }
 
 //go home

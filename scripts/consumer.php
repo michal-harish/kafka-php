@@ -41,10 +41,12 @@ $kafka = new Kafka($kafkaHost, $kafkaPort);
 $consumer = $kafka->createConsumer();
 
 //offsets request
-echo "\nOFFSETS REQUEST\n\n";
-foreach($consumer->offsets($topic, 0) as $offsetItem )
+echo "\nOFFSETS REQUEST ";
+$offsets = $consumer->offsets($topic, 0);
+echo $offsets[0] . "\n";
+if ($offsetHex === NULL || $offsetHex < $offsets[0])
 {
-    echo $offsetItem . "\n";
+    $offsetHex = $offsets[0];
 }
 
 //initialize watermark offset

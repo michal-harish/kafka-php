@@ -81,6 +81,10 @@ implements Kafka_IConsumer
         $data .= pack('N', $maxFetchSize); //int
         if ($this->send($data))
         {
+            if (!$this->hasIncomingData())
+            {
+                return FALSE;
+            }
             return TRUE;
         }
     }
@@ -97,28 +101,29 @@ implements Kafka_IConsumer
      */
     public function nextMessage()
     {
-        if ($this->hasIncomingData())
-        {
-            try {
+        try {
+            if ($this->hasIncomingData())
+            {
                 $message = $this->loadMessage(
                     $this->topic,
                     $this->partition,
                     clone $this->offset
                 );
-            } catch (Kafka_Exception_EndOfStream $e) {
+                //in kapi-0.7 the message offset is incremented by the total bytes occupied by the message in the kafka log
+                $this->offset->addInt($this->getReadBytes());
+                //here you are
+                return $message;
+            }
+            else
+            {
                 return FALSE;
             }
-            //in kapi-0.7 the message offset is incremented by the total bytes occupied by the message in the kafka log
-            $this->offset->addInt($this->getReadBytes());
-            //here you are
-            return $message;
-        }
-        else
-        {
+        } catch (Kafka_Exception_EndOfStream $e) {
+            $this->flushIncomingData();
             return FALSE;
         }
     }
-    
+
     /**
      * The last offset position after connection or reading nextMessage().
      * This value should be used for keeping the consumption state.
@@ -180,9 +185,9 @@ implements Kafka_IConsumer
                 if (!$this->hasIncomingData())
                 {
                     return $offsets;
-                }                
+                }
             }
         }
-           return FALSE;
+       return FALSE;
     }
 }

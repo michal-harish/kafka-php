@@ -37,7 +37,6 @@ abstract class Kafka_0_7_Channel
      */
     private $readBytes;
 
-
     /**
      * Constructor
      * 
@@ -182,7 +181,7 @@ abstract class Kafka_0_7_Channel
      * @throws Kafka_Exception
      * @return boolean 
      */
-    public function hasIncomingData()
+    protected function hasIncomingData()
     {
         if ($this->socket === NULL)
         {
@@ -192,16 +191,16 @@ abstract class Kafka_0_7_Channel
         {
             throw new Kafka_Exception(
                 "Kafka channel could not be created."
-            );            
+            );
         }
         //check the state of the connection
         if (!$this->readable)
-        {            
+        {
             throw new Kafka_Exception(
                 "Request has not been sent - maybe a connection problem."
             );
             $this->responseSize = NULL;
-        }        
+        }
         //has the response size been read yet ?       
         if ($this->responseSize === NULL)
         {
@@ -296,7 +295,7 @@ abstract class Kafka_0_7_Channel
      * @throws Kafka_Exception
      */
     protected function loadMessage($topic, $partition, Kafka_Offset $offset, $stream = NULL)
-    {        
+    {
         if ($stream === NULL)
         {
             $stream = $this->socket;
@@ -305,8 +304,8 @@ abstract class Kafka_0_7_Channel
         {
             throw new Kafka_Exception("Invalid Kafka Message size");
         }
-        $size = array_shift($size);        
-        
+        $size = array_shift($size);
+
         //read magic and load relevant attributes
         if (!$magic = @unpack('C', $this->read(1, $stream)))
         {
@@ -332,7 +331,7 @@ abstract class Kafka_0_7_Channel
         }
         //read crc
         $crc32 = array_shift(unpack('N', $this->read(4, $stream)));
-        
+
         //load payload depending on type of the compression
         switch($compression)
         {
@@ -396,9 +395,11 @@ abstract class Kafka_0_7_Channel
                 $gzFooter = $this->read(8, $stream);
                 $compressedPayload = $gzHeader . $gzData . $gzFooter;
                 //validate the payload
-                if (crc32($compressedPayload ) != $crc32)
+                $apparentCrc32 = crc32($compressedPayload );
+                if ($apparentCrc32 != $crc32)
                 {
-                    throw new Kafka_Exception("Invalid message CRC32");
+                    $warning = "Invalid message CRC32 $crc32 <> $apparentCrc32";
+                    throw new Kafka_Exception($warning);
                 }
                 //uncompress now depending on the method flag
                 $payloadBuffer = fopen('php://temp', 'rw');
@@ -430,6 +431,7 @@ abstract class Kafka_0_7_Channel
                     );
                     break;
                 }
+
                 //validate gzip data based on the gzipt footer
                 $datacrc = array_shift(unpack("V",substr($gzFooter, 0, 4)));
                 $datasize = array_shift(unpack("V",substr($gzFooter, 4, 4)));

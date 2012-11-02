@@ -39,7 +39,7 @@ implements Kafka_IConsumer
      * @param string $topic
      * @param int $partition 
      * @param Kafka_Offset $offset - Offset to fetch messages from
-     * @param int $maxMessageSize - Maximum size of a single message 
+     * @param int $maxFetchSize - Maximum size of a single message 
      * @throws Kafka_Exception
      * @return bool Ready-to-read state
      */
@@ -47,7 +47,7 @@ implements Kafka_IConsumer
         $topic,
         $partition = 0,
         Kafka_Offset $offset = NULL, 
-        $maxMessageSize = 1000000
+        $maxFetchSize = 1000000
     )
     {
         if (!$topic || !is_string($topic))
@@ -62,27 +62,27 @@ implements Kafka_IConsumer
         if ($offset === NULL)
         {
             $this->offset = new Kafka_Offset();
-        }       
+        }
         else
         {
             $this->offset = clone $offset;
         }
-        if (!is_numeric($maxMessageSize) || $maxMessageSize <=0)
+        if (!is_numeric($maxFetchSize) || $maxFetchSize <=0)
         {
             throw new Kafka_Exception(
                 "Maximum fetch size must be a positive integer."
             );
-        }        
+        }
         //format the 0.7 fetch request 
         $data = pack('n', Kafka::REQUEST_KEY_FETCH);//short
         $data .= pack('n', strlen($this->topic)) . $this->topic;//short string
         $data .= pack('N', $this->partition);//int
         $data .= $this->offset->getData();//bigint
-        $data .= pack('N', $maxMessageSize); //int
+        $data .= pack('N', $maxFetchSize); //int
         if ($this->send($data))
-        {            
+        {
             return TRUE;
-        }        
+        }
     }
 
     /**
@@ -98,12 +98,16 @@ implements Kafka_IConsumer
     public function nextMessage()
     {
         if ($this->hasIncomingData())
-        {            
-            $message = $this->loadMessage(
-                $this->topic,
-                $this->partition,
-                clone $this->offset                
-            );
+        {
+            try {
+                $message = $this->loadMessage(
+                    $this->topic,
+                    $this->partition,
+                    clone $this->offset
+                );
+            } catch (Kafka_Exception_EndOfStream $e) {
+                return FALSE;
+            }
             //in kapi-0.7 the message offset is incremented by the total bytes occupied by the message in the kafka log
             $this->offset->addInt($this->getReadBytes());
             //here you are

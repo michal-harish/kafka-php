@@ -107,12 +107,12 @@ abstract class Kafka_0_7_Channel
         {
             throw new Kafka_Exception(
                 "Kafka channel could not be created."
-            );            
+            );
         }
         if ($this->readable)
         {
             $this->flushIncomingData();
-        }                
+        }
         $requestSize = strlen($requestData);
         $written = fwrite($this->socket, pack('N', $requestSize));
         $written += fwrite($this->socket, $requestData);
@@ -125,23 +125,27 @@ abstract class Kafka_0_7_Channel
         $this->readable = $expectsResposne;
         return TRUE;
     }
-    
+
     /**
      * @param int $size
      * @param resource $stream
      * @throws Kafka_Exception
      */
     final protected function read($size, $stream = NULL)
-    {        
+    {
         if ($stream === NULL)
         {
             if (!$this->readable)
-            {            
+            {
                 throw new Kafka_Exception(
                     "Kafka channel is not readable."
                 );
-            }            
+            }
             $stream = $this->socket;
+        }
+        if ($this->responseSize < $size)
+        {
+            throw new Kafka_Exception_EndOfStream("While trying to read $size bytes from consumer channel.");
         }
         $result = fread($stream, $size);
         if ($stream === $this->socket)
@@ -151,7 +155,7 @@ abstract class Kafka_0_7_Channel
         }
         return $result; 
     }
-    
+
     /**
      * Methods may wish to flush remaining response
      * data if for some reasons are no longer interested
@@ -178,7 +182,7 @@ abstract class Kafka_0_7_Channel
      * @throws Kafka_Exception
      * @return boolean 
      */
-    protected function hasIncomingData()
+    public function hasIncomingData()
     {
         if ($this->socket === NULL)
         {

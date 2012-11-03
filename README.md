@@ -25,8 +25,16 @@ Examples
 />php ./scripts/producer.php
 
 
+FIXME unit-test Kafka_Offset
+FIXME unit-test Kafka_Message create compare get attributes
+FIXME unit-test 0_7 message set compression to the byte level 
+FIXME unit-test Kafka_Exception_EndOfStream and that getWatermark doesn't advance
+FIXME unit-test consumer offset advancs correctly to the byte level after nextMessage()
+FIXME unit-test consumer offset doesn't advance nextMessage() returns null|false
+FIXME unit-test consumer offset doesn't advance when exception is raised during nextMessage() 
 
-TODO Batch producer (with compressed message set) - this would be useful for tail -f .. | type of producers 
+TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood
+ 
 TODO - profiling & optimization
     - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
     - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)

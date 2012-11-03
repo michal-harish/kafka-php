@@ -1,3 +1,8 @@
+=======
+kafka-php
+=========
+
+
 This is an alternative to the existing Kafka PHP Client which is in the incubator,
 the main motivation to write it was that it seemed important
 that the fetch requests are not loaded entirely into memory but
@@ -19,11 +24,17 @@ so the api doesn't need to follow the scala/java object graph and can be much si
 
 
 
+=======
 Examples
+========
 
 />php ./scripts/consumer.php  
 />php ./scripts/producer.php
 
+
+=======
+Work Log
+========
 
 FIXME unit-test Kafka_Offset
 FIXME unit-test Kafka_Message create compare get attributes

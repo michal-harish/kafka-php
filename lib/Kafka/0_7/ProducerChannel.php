@@ -55,19 +55,41 @@ implements Kafka_IProducer
         foreach($this->messageQueue as $topic => &$partitions)
         {
             foreach($partitions as $partition => &$messageSet)
-            {        
-                //0.7 kapi header
+            {                                
+                $batchMessageData = null;
+                $batchCompression = Kafka::COMPRESSION_NONE;                
+                $produceData = '';
+                foreach($messageSet as $message)
+                {                	
+                	if ($batchCompression != $message->compression())
+                	{          
+                		if ($batchCompression != Kafka::COMPRESSION_NONE)
+                		{      		
+                			$produceData .= $this->batchWrap($topic,$partition,$batchMessageData,$batchCompression);
+                			$batchMessageData = null;
+                		}                		
+                		$batchCompression = $message->compression();
+                	}
+
+                	if ($batchCompression != Kafka::COMPRESSION_NONE)
+                	{
+                		$batchMessageData .= $this->packMessage($message, Kafka::COMPRESSION_NONE);
+                	} else {
+                    	$produceData .= $this->packMessage($message);
+                	}                    
+                }
+                if ($batchMessageData !== null)
+                {           	
+	                $produceData .= $this->batchWrap($topic,$partition,$batchMessageData,$batchCompression);    	            
+                }
+
+                //0.7 api header
                 $data = pack('n', Kafka::REQUEST_KEY_PRODUCE); //short
                 $data .= pack('n', strlen($topic)) . $topic; //short string
                 $data .= pack('N', $partition); //int                
-                //0.7 produce message set
-                $messageSetData = '';
-                foreach($messageSet as $message)
-                {
-                    $messageSetData .= $this->packMessage($message);                    
-                }
-                $data .= pack('N', strlen($messageSetData));
-                $data .= $messageSetData; //
+                //0.7 produce messages
+                $data .= pack('N', strlen($produceData));
+                $data .= $produceData; //
                 //in 0.7 kafka api there is no acknowledgement so expectResponse for send is FALSE
                 if ($this->send($data, FALSE))
                 {                
@@ -83,6 +105,27 @@ implements Kafka_IProducer
         //because no acknowledgements come from Kafka
         //and we return the success only.
         return TRUE; 
+    }
+    
+    /**
+     * Internal for producing batch of consecutive messages with the same compress.codec
+     *   
+     * @returns A compressed payload representing a batch of messages
+     */
+    private function batchWrap($topic, $partition, &$batchMessageData, $batchCompression)
+    {
+    	if ($batchCompression != Kafka::COMPRESSION_NONE)
+    	{
+    		$batchPayload = $this->packMessage(
+   				new Kafka_Message(
+					$topic,
+					$partition,
+					$batchMessageData,
+					$batchCompression
+   				)
+    		);    		
+    		return $batchPayload;
+    	}
     }
     
     

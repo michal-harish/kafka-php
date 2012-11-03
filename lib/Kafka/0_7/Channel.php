@@ -264,40 +264,35 @@ abstract class Kafka_0_7_Channel
     }
 
     /**
-     * Internal method for sending message in a correct kapi-0.7 format.
+     * Internal method for packing message into kafka wire format.
+     * 
      * @param Kafka_Message $message
+     * @param mixed $overrideCompression Null or Kafka::COMPRESSION_NONE or Kafka::COMPRESSION_GZIP, etc. 
      * @throws Kafka_Exception
      */
-    protected function packMessage(Kafka_Message $message)
+    protected function packMessage(Kafka_Message $message, $overrideCompression = null)
     {
-        switch($message->compression())
+    	$compression = $overrideCompression === null ? $message->compression() : $overrideCompression;
+        switch($compression)
         {
             case Kafka::COMPRESSION_NONE:
                 $compressedPayload = $message->payload();
                 break;
             case Kafka::COMPRESSION_GZIP:
-                //0.7 api uses double wrapped messages for compression.                                
-                $innerMessage = new Kafka_Message(
-                    $message->topic(),
-                    $message->partition(),
-                    $message->payload(),
-                    Kafka::COMPRESSION_NONE
-                );
-                //Wrap payload as a non-compressed kafka message.
-                $compressedPayload = gzencode($this->packMessage($innerMessage));
+            	$compressedPayload = gzencode($message->payload());
                 break;
             case Kafka::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
                 break;
             default:
-                throw new Kafka_Exception("Unknown kafka compression $compression");
+                throw new Kafka_Exception("Unknown kafka compression codec $compression");
             break;
         }
         //for reach message using MAGIC_1 format which includes compression attribute byte
         $messageBoundsSize = 1 + 1 + 4 + strlen($compressedPayload);
         $data = pack('N', $messageBoundsSize); //int
         $data .= pack('C', Kafka::MAGIC_1);//byte
-        $data .= pack('C', $message->compression());//byte
+        $data .= pack('C', $compression);//byte
         $data .= pack('N', crc32($compressedPayload));//int
         $data .= $compressedPayload;//unbounded string
         return $data;

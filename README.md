@@ -15,6 +15,7 @@ so the api doesn't need to follow the scala/java object graph and can be much si
     - Broker abstraction for different connection strategies
     - OffsetRequest workaround for 64-bit unix timestamp
     - Produce Request only checks correct bytes were sent (ack not available)
+    - Producer compresses batches of consecutive messages with same compression codec as a single message 
 
 
 

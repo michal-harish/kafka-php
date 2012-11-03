@@ -22,7 +22,7 @@ interface Kafka_IConsumer
      * @param string $topic
      * @param int $partition
      * @param Kafka_Offset $offset - Offset to fetch messages from
-     * @param int $maxMessageSize - Maximum size of a single message
+     * @param int $maxFetchSize - Maximum bytes in a single fetch request
      * @throws Kafka_Exception
      * @return bool Ready-to-read state
      */
@@ -30,7 +30,7 @@ interface Kafka_IConsumer
         $topic,
         $partition = 0,
         Kafka_Offset $offset = NULL,
-        $maxMessageSize = 1000000
+        $maxFetchSize = 1000000
     );    
 
     /**

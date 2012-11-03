@@ -18,17 +18,23 @@ $producer->add(
         Kafka::COMPRESSION_NONE
     )
 );
-$producer->add(
-    new Kafka_Message(
-        $topic, 0,
-        'MESSAGE 2 - passed as compressed message object ',
-        Kafka::COMPRESSION_GZIP
-    )
-);
+
+for($i=2; $i<100; $i++)
+{
+	$producer->add(
+		new Kafka_Message(
+			$topic, 0,
+			"MESSAGE $i - passed as consecutive compressed message object",
+			Kafka::COMPRESSION_GZIP
+		)
+	);
+}
+
+
 $producer->add(
     new Kafka_Message(
         'test', 0,
-        'MESSAGE 2 - passed as compressed message object to a different topic `test`',
+        'MESSAGE 100 - passed as compressed message object to a different topic `test`',
         Kafka::COMPRESSION_GZIP
     )
 );

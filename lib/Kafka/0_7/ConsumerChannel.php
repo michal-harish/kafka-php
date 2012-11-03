@@ -109,7 +109,7 @@ implements Kafka_IConsumer
                     $this->partition,
                     clone $this->offset
                 );
-                
+                echo "\nAdding tot offset " . $this->getReadBytes();
                 $this->offset->addInt($this->getReadBytes());
 
                 return $message;

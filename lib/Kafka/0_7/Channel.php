@@ -199,6 +199,7 @@ abstract class Kafka_0_7_Channel
     {
         if (is_resource($this->innerStream))
     	{
+    		$this->readBytes = 0;
     		return true;
     	}
     	if ($this->socket === NULL)
@@ -240,7 +241,7 @@ abstract class Kafka_0_7_Channel
             return FALSE;
         } else 
         {
-        	//TODO unit test this doesn't get modified when fetching
+        	//TODO unit test readBytes do not get reset by any other method!
         	//to ensure consitent advancing of the offset
             $this->readBytes = 0;
             return TRUE;
@@ -430,8 +431,7 @@ abstract class Kafka_0_7_Channel
                     case 0: //copy
                         $uncompressedSize = fwrite($payloadBuffer, $gzData);
                         break;
-                    case 1: //compress
-                        //TODO have not tested compress method
+                    case 1: //compress                        
                         $uncompressedSize = fwrite($payloadBuffer, gzuncompress($gzData));
                         break;
                     case 2: //pack

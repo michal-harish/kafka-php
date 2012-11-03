@@ -51,6 +51,20 @@ abstract class Kafka_0_7_Channel
     }
     
     /**
+     * Internal messageBatch for compressed sets of messages
+     * @var resource
+     */
+    private $innerStream = null;
+    
+    /**
+     * Internal for keeping the initial offset at which the innerStream starts
+     * within the kafka stream.
+     * 
+     * @var Kafka_Offset
+     */
+    private $innerOffset = null;
+    
+    /**
      * Destructor
      */
     public function __destruct()
@@ -142,9 +156,9 @@ abstract class Kafka_0_7_Channel
             }
             $stream = $this->socket;
         }
-        if ($this->responseSize < $size)
+        if ($stream === $this->socket && $this->responseSize < $size)
         {
-            throw new Kafka_Exception_EndOfStream("While trying to read $size bytes from consumer channel.");
+            throw new Kafka_Exception_EndOfStream("Trying to read $size from $this->responseSize remaining.");
         }
         $result = fread($stream, $size);
         if ($stream === $this->socket)
@@ -183,7 +197,11 @@ abstract class Kafka_0_7_Channel
      */
     protected function hasIncomingData()
     {
-        if ($this->socket === NULL)
+        if (is_resource($this->innerStream))
+    	{
+    		return true;
+    	}
+    	if ($this->socket === NULL)
         {
             $this->createSocket();
         }
@@ -193,7 +211,6 @@ abstract class Kafka_0_7_Channel
                 "Kafka channel could not be created."
             );
         }
-        //check the state of the connection
         if (!$this->readable)
         {
             throw new Kafka_Exception(
@@ -201,11 +218,9 @@ abstract class Kafka_0_7_Channel
             );
             $this->responseSize = NULL;
         }
-        //has the response size been read yet ?       
         if ($this->responseSize === NULL)
         {
             $this->responseSize = array_shift(unpack('N', fread($this->socket, 4)));
-            //read the errorCode
             $errorCode = array_shift(unpack('n', $this->read(2)));
             if ($errorCode != 0)
             {
@@ -225,6 +240,8 @@ abstract class Kafka_0_7_Channel
             return FALSE;
         } else 
         {
+        	//TODO unit test this doesn't get modified when fetching
+        	//to ensure consitent advancing of the offset
             $this->readBytes = 0;
             return TRUE;
         }
@@ -259,7 +276,7 @@ abstract class Kafka_0_7_Channel
                 $compressedPayload = $message->payload();
                 break;
             case Kafka::COMPRESSION_GZIP:
-                //0.7 kapi uses double wrapped messages for compression.                                
+                //0.7 api uses double wrapped messages for compression.                                
                 $innerMessage = new Kafka_Message(
                     $message->topic(),
                     $message->partition(),
@@ -287,26 +304,33 @@ abstract class Kafka_0_7_Channel
     }
     
     /**
-     * Internal recursive method for loading a kapi-0.7  formatted message.
+     * Internal recursive method for loading a api-0.7  formatted message.
      * @param unknown_type $topic
      * @param unknown_type $partition
      * @param Kafka_Offset $offset
      * @param unknown_type $stream
      * @throws Kafka_Exception
+     * @return Kafka_Message|false
      */
     protected function loadMessage($topic, $partition, Kafka_Offset $offset, $stream = NULL)
     {
+    	if (is_resource($this->innerStream)
+    		&& $stream !== $this->innerStream 
+    		&& $innerMessage = $this->loadMessageFromInnerStream($topic,$partition)
+    	)
+    	{
+    		return $innerMessage;
+    	}
         if ($stream === NULL)
         {
             $stream = $this->socket;
-        }
+        }        
         if (!$size = @unpack('N', $this->read(4, $stream)))
         {
-            throw new Kafka_Exception("Invalid Kafka Message size");
+        	return false;
         }
         $size = array_shift($size);
 
-        //read magic and load relevant attributes
         if (!$magic = @unpack('C', $this->read(1, $stream)))
         {
             throw new Kafka_Exception("Invalid Kafka Message");
@@ -314,12 +338,10 @@ abstract class Kafka_0_7_Channel
         switch($magic = array_shift($magic))
         {
             case Kafka::MAGIC_0:
-                //no compression attribute
                 $compression = Kafka::COMPRESSION_NONE;
                 $payloadSize = $size - 5;
                 break;
             case Kafka::MAGIC_1:
-                //read compression attribute
                 $compression = array_shift(unpack('C', $this->read(1, $stream)));
                 $payloadSize = $size - 6;
                 break;
@@ -329,25 +351,30 @@ abstract class Kafka_0_7_Channel
             );
             break;
         }
-        //read crc
+
         $crc32 = array_shift(unpack('N', $this->read(4, $stream)));
 
-        //load payload depending on type of the compression
         switch($compression)
         {
+        	default:
+        		throw new Kafka_Exception("Unknown kafka compression $compression");
+        		break;
+        		
+        	case Kafka::COMPRESSION_SNAPPY:
+        		throw new Kafka_Exception("Snappy compression not yet implemented in php client");
+        		break;
+        		
             case Kafka::COMPRESSION_NONE:
-                //message not compressed, read directly from the connection
                 $payload = $this->read($payloadSize, $stream);
-                //validate the raw payload
                 if (crc32($payload) != $crc32)
                 {
                     throw new Kafka_Exception("Invalid message CRC32");
                 }
                 $compressedPayload = &$payload;
                 break;
+                
             case Kafka::COMPRESSION_GZIP:
-                //gzip header
-                $gzHeader = $this->read(10, $stream); //[0]gzip signature, [2]method, [3]flags, [4]unix ts, [8]xflg, [9]ostype
+                $gzHeader = $this->read(10, $stream); 
                 if (strcmp(substr($gzHeader,0,2),"\x1f\x8b"))
                 {
                     throw new Kafka_Exception('Not GZIP format');
@@ -389,19 +416,19 @@ abstract class Kafka_0_7_Channel
                     }
                     $gzHeader .= $data;
                 }
-                //gzip compressed blocks
+                
                 $payloadSize -= strlen($gzHeader);
                 $gzData = $this->read($payloadSize - 8, $stream);
                 $gzFooter = $this->read(8, $stream);
                 $compressedPayload = $gzHeader . $gzData . $gzFooter;
-                //validate the payload
-                $apparentCrc32 = crc32($compressedPayload );
+                
+                $apparentCrc32 = crc32($compressedPayload);
                 if ($apparentCrc32 != $crc32)
                 {
                     $warning = "Invalid message CRC32 $crc32 <> $apparentCrc32";
                     throw new Kafka_Exception($warning);
                 }
-                //uncompress now depending on the method flag
+                
                 $payloadBuffer = fopen('php://temp', 'rw');
                 switch($gzmethod)
                 {
@@ -414,25 +441,22 @@ abstract class Kafka_0_7_Channel
                         break;
                     case 2: //pack
                         throw new Kafka_Exception(
-                                    "GZip method unsupported: $gzmethod pack"
+                        	"GZip method unsupported: $gzmethod pack"
                         );
                         break;
                     case 3: //lhz
                         throw new Kafka_Exception(
-                                    "GZip method unsupported: $gzmethod lhz"
+                        	"GZip method unsupported: $gzmethod lhz"
                         );
                         break;
                     case 8: //deflate
                         $uncompressedSize = fwrite($payloadBuffer, gzinflate($gzData));
                         break;
                     default :
-                        throw new Kafka_Exception(
-                                    "Unknown GZip method : $gzmethod"
-                    );
+                        throw new Kafka_Exception("Unknown GZip method : $gzmethod");
                     break;
                 }
 
-                //validate gzip data based on the gzipt footer
                 $datacrc = array_shift(unpack("V",substr($gzFooter, 0, 4)));
                 $datasize = array_shift(unpack("V",substr($gzFooter, 4, 4)));
                 rewind($payloadBuffer);
@@ -441,25 +465,13 @@ abstract class Kafka_0_7_Channel
                     throw new Kafka_Exception(
                         "Invalid size or crc of the gzip uncompressed data"
                     );
-                }
-                //now unwrap the inner kafka message
-                try {
-                    rewind($payloadBuffer);    
-                    $innerMessage = $this->loadMessage($topic, $partition, new Kafka_Offset(), $payloadBuffer);
-                    $payload = $innerMessage->payload();
-                } catch (Kafka_Exception $ke)
-                {
-                    //invalid inner message - probably producer that doesn't wrap header inside the compressed payload
-                    $payload = FALSE;
-                }
-                fclose($payloadBuffer);
-                break;
-            case Kafka::COMPRESSION_SNAPPY:
-                throw new Kafka_Exception("Snappy compression not yet implemented in php client");
-                break;
-            default:
-                throw new Kafka_Exception("Unknown kafka compression $compression");
-            break;
+                } 
+                rewind($payloadBuffer);   
+            	$this->innerStream = $payloadBuffer;
+            	$this->innerOffset = $offset;
+            	return $this->loadMessageFromInnerStream($topic,$partition);
+            	
+            	break;
         }
         $result =  new Kafka_Message(
             $topic,
@@ -469,7 +481,42 @@ abstract class Kafka_0_7_Channel
             $offset
         );
         return $result;
-         
     }
+    
+
+    /**
+     * Messages that arrive in compressed batches are stored in an internal stream.
+     * 
+     * @param unknown_type $topic
+     * @param unknown_type $partition
+     * @return Kafka_Message|null
+     */
+    private function loadMessageFromInnerStream($topic, $partition)
+    {
+    	if (!is_resource($this->innerStream))
+    	{
+    		throw new Kafka_Exception("Invalid inner message stream");
+    	}
+    	try { 
+	    	if ($innerMessage = $this->loadMessage(
+	    			$topic, 
+	    			$partition, 
+	    			clone $this->innerOffset, 
+	    			$this->innerStream
+	    		)
+	    	)
+	    	{
+	    		return $innerMessage;
+	    	}
+    	} catch (Kafka_Exception_EndOfStream $e)
+    	{    		
+    		//finally
+    	}
+    	fclose($this->innerStream);
+    	$this->innerStream = null;
+    	return false;
+    	 
+    }
+    
     
 }

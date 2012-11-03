@@ -109,9 +109,9 @@ implements Kafka_IConsumer
                     $this->partition,
                     clone $this->offset
                 );
-                //in kapi-0.7 the message offset is incremented by the total bytes occupied by the message in the kafka log
+                
                 $this->offset->addInt($this->getReadBytes());
-                //here you are
+
                 return $message;
             }
             else

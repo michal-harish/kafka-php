@@ -44,7 +44,7 @@ $consumer = $kafka->createConsumer();
 echo "\nOFFSETS REQUEST ";
 $offsets = $consumer->offsets($topic, 0);
 echo $offsets[0] . "\n";
-if ($offsetHex === NULL || $offsetHex < $offsets[0])
+if ($offsetHex === NULL || $offsetHex > $offsets[0])
 {
     $offsetHex = $offsets[0];
 }

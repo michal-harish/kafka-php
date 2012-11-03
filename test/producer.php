@@ -1,7 +1,7 @@
 <?php
 //bootstrap 
 chdir(dirname(__FILE__));
-require "../lib/Kafka/Kafka.php";
+require "../src/Kafka/Kafka.php";
 //arguments
 $topic = isset($_SERVER['argv'][1]) 
     ? $_SERVER['argv'][1] 

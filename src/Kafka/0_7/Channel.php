@@ -221,7 +221,11 @@ abstract class Kafka_0_7_Channel
         }
         if ($this->responseSize === NULL)
         {
-            $this->responseSize = array_shift(unpack('N', fread($this->socket, 4)));
+        	if (!$bytes32 = @fread($this->socket, 4))
+        	{
+        		throw new Kafka_Exception("No response from kafka.");
+        	}
+            $this->responseSize = array_shift(unpack('N', $bytes32));
             $errorCode = array_shift(unpack('n', $this->read(2)));
             if ($errorCode != 0)
             {

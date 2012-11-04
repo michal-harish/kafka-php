@@ -108,8 +108,7 @@ implements Kafka_IConsumer
                     $this->topic,
                     $this->partition,
                     clone $this->offset
-                );
-                echo "\nAdding tot offset " . $this->getReadBytes();
+                );                
                 $this->offset->addInt($this->getReadBytes());
 
                 return $message;

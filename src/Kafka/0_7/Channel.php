@@ -18,6 +18,13 @@ abstract class Kafka_0_7_Channel
      * @var resource
      */
     private $socket = NULL;
+    
+    /**
+     * Number of times, a send operation should be attempted
+     * when socket failure occurs.
+     * @var int
+     */
+    private $socketSendRetry;
 
     /**
      * Request channel state
@@ -47,7 +54,8 @@ abstract class Kafka_0_7_Channel
     public function __construct(Kafka $connection)
     {
         $this->connection = $connection;
-        $this->readable = FALSE;        
+        $this->readable = FALSE;   
+        $this->socketSendRetry = 3;     
     }
     
     /**
@@ -77,9 +85,12 @@ abstract class Kafka_0_7_Channel
      * but could be added to the __destruct method too.
      */
     public function close() {
-        if (is_resource($this->socket)) {
+        $this->readable = false;
+        $this->responseSize = null;
+    	if (is_resource($this->socket)) {
             fclose($this->socket);
         }
+        $this->socket = null;
     }
     
     /**
@@ -112,30 +123,39 @@ abstract class Kafka_0_7_Channel
      */
     final protected function send($requestData, $expectsResposne = TRUE)
     {
-        if ($this->socket === NULL)
-        {
-            $this->createSocket();
-        }
-        elseif ($this->socket === FALSE)
-        {
-            throw new Kafka_Exception(
-                "Kafka channel could not be created."
-            );
-        }
-        if ($this->readable)
-        {
-            $this->flushIncomingData();
-        }
-        $requestSize = strlen($requestData);
-        $written = fwrite($this->socket, pack('N', $requestSize));
-        $written += fwrite($this->socket, $requestData);
-        if ($written  != $requestSize + 4)
-        {
-            throw new Kafka_Exception(
-                "Request written $written bytes, expected to send:" . ($requestSize + 4)
-            );
-        }
-        $this->readable = $expectsResposne;
+    	$retry = $this->socketSendRetry;
+    	while ($retry > 0)
+    	{
+	        if ($this->socket === NULL)
+	        {
+	            $this->createSocket();
+	        }
+	        elseif ($this->socket === FALSE)
+	        {
+	            throw new Kafka_Exception("Kafka channel could not be created.");
+	        }
+	        if ($this->readable)
+	        {
+	            $this->flushIncomingData();
+	        }
+	        $requestSize = strlen($requestData);
+	        $written = @fwrite($this->socket, pack('N', $requestSize));
+	        $written += @fwrite($this->socket, $requestData);
+	        if ($written  != $requestSize + 4)
+	        {
+	        	$this->close();
+	        	if (--$retry <= 0)
+	        	{	        	        		
+		            throw new Kafka_Exception(
+		                "Request written $written bytes, expected to send:" . ($requestSize + 4)
+		            );
+	        	} else {	        		
+	        		continue;
+	        	}
+	        }
+	        $this->readable = $expectsResposne;
+	        break;
+    	}
         return TRUE;
     }
 
@@ -161,7 +181,11 @@ abstract class Kafka_0_7_Channel
         	$this->readable = false;
             throw new Kafka_Exception_EndOfStream("Trying to read $size from $this->responseSize remaining.");
         }
-        $result = fread($stream, $size);
+        $result = @fread($stream, $size);
+        if (!$result) {
+        	$this->close();
+        	throw new Kafka_Exception("Could not read from the kafka channel socket.");
+        }
         if ($stream === $this->socket)
         {
             $this->readBytes += $size;
@@ -220,10 +244,10 @@ abstract class Kafka_0_7_Channel
             $this->responseSize = NULL;
         }
         if ($this->responseSize === NULL)
-        {        	
+        {        
         	if (!$bytes32 = @fread($this->socket, 4))
         	{
-        		$this->readable = false;
+        		$this->close();
         		throw new Kafka_Exception_EndOfStream("Could not read kafka response header.");
         	}
             $this->responseSize = array_shift(unpack('N', $bytes32));
@@ -426,8 +450,7 @@ abstract class Kafka_0_7_Channel
                 $apparentCrc32 = crc32($compressedPayload);
                 if ($apparentCrc32 != $crc32)
                 {
-                    $warning = "Invalid message CRC32 $crc32 <> $apparentCrc32";
-                    throw new Kafka_Exception($warning);
+                    throw new Kafka_Exception("Invalid message CRC32 $crc32 <> $apparentCrc32");
                 }
                 
                 $payloadBuffer = fopen('php://temp', 'rw');

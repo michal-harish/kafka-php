@@ -8,6 +8,7 @@ require "../src/Kafka/Kafka.php";
 $kafkaHost = 'localhost';
 $kafkaPort = 9092;
 $topic = NULL;
+$partition = 0;
 $offsetHex = NULL;
 
 //read arguments 
@@ -21,6 +22,9 @@ while ($arg = array_shift($args))
             $kafkaHost = array_shift($connection);
             if ($connection) $kafkaPort = array_shift($connection);
         break;
+    	case '--partition':
+    		$partition= array_shift($args);
+    		break;
         case '--offset':
             $offsetHex = array_shift($args);
         break;
@@ -41,9 +45,17 @@ $kafka = new Kafka($kafkaHost, $kafkaPort);
 $consumer = $kafka->createConsumer();
 
 //offsets request
-echo "\nOFFSETS REQUEST ";
-$offsets = $consumer->offsets($topic, 0);
-echo $offsets[0] . "\n";
+while (true) {	
+	try {
+		$offsets = $consumer->offsets($topic, $partition);
+		break;
+	} catch (Kafka_Exception $e)
+	{
+		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();		
+		if (--$partition<0) break;
+	}
+}
+echo "\nOFFSETS REQUEST LATEST `$topic:$partition` = ". $offsets[0] . "\n";
 if ($offsetHex === NULL || $offsetHex > $offsets[0])
 {
     $offsetHex = $offsets[0];

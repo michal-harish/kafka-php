@@ -158,6 +158,7 @@ abstract class Kafka_0_7_Channel
         }
         if ($stream === $this->socket && $this->responseSize < $size)
         {
+        	$this->readable = false;
             throw new Kafka_Exception_EndOfStream("Trying to read $size from $this->responseSize remaining.");
         }
         $result = fread($stream, $size);
@@ -183,7 +184,6 @@ abstract class Kafka_0_7_Channel
                 break;
             }
         }
-        $this->readable = FALSE;
         $this->responseSize = NULL;
         $this->readable = FALSE;
     }
@@ -220,10 +220,11 @@ abstract class Kafka_0_7_Channel
             $this->responseSize = NULL;
         }
         if ($this->responseSize === NULL)
-        {
+        {        	
         	if (!$bytes32 = @fread($this->socket, 4))
         	{
-        		throw new Kafka_Exception("No response from kafka.");
+        		$this->readable = false;
+        		throw new Kafka_Exception_EndOfStream("Could not read kafka response header.");
         	}
             $this->responseSize = array_shift(unpack('N', $bytes32));
             $errorCode = array_shift(unpack('n', $this->read(2)));

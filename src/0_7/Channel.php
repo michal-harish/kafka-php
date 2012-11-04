@@ -123,7 +123,6 @@ abstract class Kafka_0_7_Channel
      */
     final protected function send($requestData, $expectsResposne = TRUE)
     {
-
         $retry = $this->socketSendRetry;
         while ($retry > 0)
         {
@@ -137,7 +136,7 @@ abstract class Kafka_0_7_Channel
             }
             if ($this->readable)
             {
-                $this->flushIncomingData();
+                throw new Kafka_Exception("Kafka channel has incoming data.");
             }
             $requestSize = strlen($requestData);
             $written = @fwrite($this->socket, pack('N', $requestSize));
@@ -179,7 +178,10 @@ abstract class Kafka_0_7_Channel
         }
         if ($stream === $this->socket && $this->responseSize < $size)
         {
+            //flush remaining data
+            $this->read($this->responseSize, $stream);
             $this->readable = false;
+            $this->responseSize = null;
             throw new Kafka_Exception_EndOfStream("Trying to read $size from $this->responseSize remaining.");
         }
 
@@ -209,24 +211,6 @@ abstract class Kafka_0_7_Channel
             $retrying = true;
         }
         return $result; 
-    }
-
-    /**
-     * Methods may wish to flush remaining response
-     * data if for some reasons are no longer interested
-     * in processing and want issue another request.
-     */
-    final protected function flushIncomingData()
-    {
-        while($this->responseSize > 0 )
-        {
-            if (!$this->read(min($this->responseSize, 8192)))
-            {
-                break;
-            }
-        }
-        $this->responseSize = NULL;
-        $this->readable = FALSE;
     }
 
     /**

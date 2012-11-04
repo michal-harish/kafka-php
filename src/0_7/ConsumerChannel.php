@@ -114,7 +114,6 @@ implements Kafka_IConsumer
                 return FALSE;
             }
         } catch (Kafka_Exception_EndOfStream $e) {
-            $this->flushIncomingData();
             return FALSE;
         }
     }

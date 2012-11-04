@@ -66,7 +66,7 @@ $watermark = new Kafka_Offset($offsetHex);
 //fetch request
 $totalProcessed = 0;
 echo "\nFETCH REQUEST FROM WATERMARK OFFSET: $watermark\n";
-if ($consumer->fetch($topic, 0, $watermark))
+while ($consumer->fetch($topic, 0, $watermark))
 {
     try {
         while ($message = $consumer->nextMessage())
@@ -97,8 +97,7 @@ if ($consumer->fetch($topic, 0, $watermark))
                     $processed = TRUE;
                     $payload = $message->payload();
                     echo "\n[offset:" . $message->offset() . " watermark: $watermark]" . $message->payload() ;
-                } catch (Exception $e)
-                   {
+                } catch (Exception $e) {
                        echo "\nERROR PROCESSING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
                        if (!$consistent)
                        {
@@ -112,13 +111,13 @@ if ($consumer->fetch($topic, 0, $watermark))
             } while(!$processed);
                $totalProcessed++;
         }
-        echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $totalProcessed, NEW WATERMARK: " . $watermark . "\n\n";
-       } 
-       catch (Exception $e)
-       {
-           echo "\nERROR FETCHING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
-       }
+   } catch (Exception $e) {
+       echo "\n\nERROR FETCHING MESSAGE AT OFFSET $watermark: " . $e->getMessage();
+       echo $e->getTraceAsString();
+       break;
+   }
 }
+echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $totalProcessed, NEW WATERMARK: " . $watermark . "\n\n";
 
 //go home
 $consumer->close();

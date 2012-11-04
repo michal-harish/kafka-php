@@ -87,7 +87,7 @@ abstract class Kafka_0_7_Channel
     public function close() {
         $this->readable = false;
         $this->responseSize = null;
-    	if (is_resource($this->socket)) {
+        if (is_resource($this->socket)) {
             fclose($this->socket);
         }
         $this->socket = null;
@@ -123,39 +123,40 @@ abstract class Kafka_0_7_Channel
      */
     final protected function send($requestData, $expectsResposne = TRUE)
     {
-    	$retry = $this->socketSendRetry;
-    	while ($retry > 0)
-    	{
-	        if ($this->socket === NULL)
-	        {
-	            $this->createSocket();
-	        }
-	        elseif ($this->socket === FALSE)
-	        {
-	            throw new Kafka_Exception("Kafka channel could not be created.");
-	        }
-	        if ($this->readable)
-	        {
-	            $this->flushIncomingData();
-	        }
-	        $requestSize = strlen($requestData);
-	        $written = @fwrite($this->socket, pack('N', $requestSize));
-	        $written += @fwrite($this->socket, $requestData);
-	        if ($written  != $requestSize + 4)
-	        {
-	        	$this->close();
-	        	if (--$retry <= 0)
-	        	{	        	        		
-		            throw new Kafka_Exception(
-		                "Request written $written bytes, expected to send:" . ($requestSize + 4)
-		            );
-	        	} else {	        		
-	        		continue;
-	        	}
-	        }
-	        $this->readable = $expectsResposne;
-	        break;
-    	}
+
+        $retry = $this->socketSendRetry;
+        while ($retry > 0)
+        {
+            if ($this->socket === NULL)
+            {
+                $this->createSocket();
+            }
+            elseif ($this->socket === FALSE)
+            {
+                throw new Kafka_Exception("Kafka channel could not be created.");
+            }
+            if ($this->readable)
+            {
+                $this->flushIncomingData();
+            }
+            $requestSize = strlen($requestData);
+            $written = @fwrite($this->socket, pack('N', $requestSize));
+            $written += @fwrite($this->socket, $requestData);
+            if ($written  != $requestSize + 4)
+            {
+                $this->close();
+                if (--$retry <= 0)
+                {                               
+                    throw new Kafka_Exception(
+                        "Request written $written bytes, expected to send:" . ($requestSize + 4)
+                    );
+                } else {                    
+                    continue;
+                }
+            }
+            $this->readable = $expectsResposne;
+            break;
+        }
         return TRUE;
     }
 
@@ -178,18 +179,34 @@ abstract class Kafka_0_7_Channel
         }
         if ($stream === $this->socket && $this->responseSize < $size)
         {
-        	$this->readable = false;
+            $this->readable = false;
             throw new Kafka_Exception_EndOfStream("Trying to read $size from $this->responseSize remaining.");
         }
-        $result = @fread($stream, $size);
-        if (!$result) {
-        	$this->close();
-        	throw new Kafka_Exception("Could not read from the kafka channel socket.");
-        }
-        if ($stream === $this->socket)
+
+        $soFarRead = 0;
+        $result = '';
+        $retrying = false;
+        while ($soFarRead < $size)
         {
-            $this->readBytes += $size;
-            $this->responseSize -= $size;
+            $packet = fread($stream, $size - $soFarRead);
+            if ($packet === false)
+            {
+                $this->close();
+                throw new Kafka_Exception("Could not read from the kafka channel socket.");
+            } elseif (!$packet)
+            {
+                throw new Kafka_Exception_EndOfStream("No response data received from kafka broker.");
+            } else {
+                $packetSize = strlen($packet);
+                $soFarRead += $packetSize;
+                $result .= $packet;
+                if ($stream === $this->socket)
+                {
+                    $this->readBytes += $packetSize;
+                    $this->responseSize -= $packetSize;
+                }
+            }
+            $retrying = true;
         }
         return $result; 
     }
@@ -222,11 +239,11 @@ abstract class Kafka_0_7_Channel
     protected function hasIncomingData()
     {
         if (is_resource($this->innerStream))
-    	{
-    		$this->readBytes = 0;
-    		return true;
-    	}
-    	if ($this->socket === NULL)
+        {
+            $this->readBytes = 0;
+            return true;
+        }
+        if ($this->socket === NULL)
         {
             $this->createSocket();
         }
@@ -245,11 +262,11 @@ abstract class Kafka_0_7_Channel
         }
         if ($this->responseSize === NULL)
         {        
-        	if (!$bytes32 = @fread($this->socket, 4))
-        	{
-        		$this->close();
-        		throw new Kafka_Exception_EndOfStream("Could not read kafka response header.");
-        	}
+            if (!$bytes32 = @fread($this->socket, 4))
+            {
+                $this->close();
+                throw new Kafka_Exception_EndOfStream("Could not read kafka response header.");
+            }
             $this->responseSize = array_shift(unpack('N', $bytes32));
             $errorCode = array_shift(unpack('n', $this->read(2)));
             if ($errorCode != 0)
@@ -270,8 +287,8 @@ abstract class Kafka_0_7_Channel
             return FALSE;
         } else 
         {
-        	//TODO unit test readBytes do not get reset by any other method!
-        	//to ensure consitent advancing of the offset
+            //TODO unit test readBytes do not get reset by any other method!
+            //to ensure consitent advancing of the offset
             $this->readBytes = 0;
             return TRUE;
         }
@@ -302,14 +319,14 @@ abstract class Kafka_0_7_Channel
      */
     protected function packMessage(Kafka_Message $message, $overrideCompression = null)
     {
-    	$compression = $overrideCompression === null ? $message->compression() : $overrideCompression;
+        $compression = $overrideCompression === null ? $message->compression() : $overrideCompression;
         switch($compression)
         {
             case Kafka::COMPRESSION_NONE:
                 $compressedPayload = $message->payload();
                 break;
             case Kafka::COMPRESSION_GZIP:
-            	$compressedPayload = gzencode($message->payload());
+                $compressedPayload = gzencode($message->payload());
                 break;
             case Kafka::COMPRESSION_SNAPPY:
                 throw new Kafka_Exception("Snappy compression not yet implemented in php client");
@@ -339,20 +356,20 @@ abstract class Kafka_0_7_Channel
      */
     protected function loadMessage($topic, $partition, Kafka_Offset $offset, $stream = NULL)
     {
-    	if (is_resource($this->innerStream)
-    		&& $stream !== $this->innerStream 
-    		&& $innerMessage = $this->loadMessageFromInnerStream($topic,$partition)
-    	)
-    	{
-    		return $innerMessage;
-    	}
+        if (is_resource($this->innerStream)
+            && $stream !== $this->innerStream 
+            && $innerMessage = $this->loadMessageFromInnerStream($topic,$partition)
+        )
+        {
+            return $innerMessage;
+        }
         if ($stream === NULL)
         {
             $stream = $this->socket;
         }        
         if (!$size = @unpack('N', $this->read(4, $stream)))
         {
-        	return false;
+            return false;
         }
         $size = array_shift($size);
 
@@ -381,14 +398,14 @@ abstract class Kafka_0_7_Channel
 
         switch($compression)
         {
-        	default:
-        		throw new Kafka_Exception("Unknown kafka compression $compression");
-        		break;
-        		
-        	case Kafka::COMPRESSION_SNAPPY:
-        		throw new Kafka_Exception("Snappy compression not yet implemented in php client");
-        		break;
-        		
+            default:
+                throw new Kafka_Exception("Unknown kafka compression $compression");
+                break;
+                
+            case Kafka::COMPRESSION_SNAPPY:
+                throw new Kafka_Exception("Snappy compression not yet implemented in php client");
+                break;
+                
             case Kafka::COMPRESSION_NONE:
                 $payload = $this->read($payloadSize, $stream);
                 if (crc32($payload) != $crc32)
@@ -450,7 +467,7 @@ abstract class Kafka_0_7_Channel
                 $apparentCrc32 = crc32($compressedPayload);
                 if ($apparentCrc32 != $crc32)
                 {
-                    throw new Kafka_Exception("Invalid message CRC32 $crc32 <> $apparentCrc32");
+                    throw new Kafka_Exception("Invalid compressed message CRC32 $crc32 <> $apparentCrc32");
                 }
                 
                 $payloadBuffer = fopen('php://temp', 'rw');
@@ -464,12 +481,12 @@ abstract class Kafka_0_7_Channel
                         break;
                     case 2: //pack
                         throw new Kafka_Exception(
-                        	"GZip method unsupported: $gzmethod pack"
+                            "GZip method unsupported: $gzmethod pack"
                         );
                         break;
                     case 3: //lhz
                         throw new Kafka_Exception(
-                        	"GZip method unsupported: $gzmethod lhz"
+                            "GZip method unsupported: $gzmethod lhz"
                         );
                         break;
                     case 8: //deflate
@@ -490,11 +507,11 @@ abstract class Kafka_0_7_Channel
                     );
                 } 
                 rewind($payloadBuffer);   
-            	$this->innerStream = $payloadBuffer;
-            	$this->innerOffset = $offset;
-            	return $this->loadMessageFromInnerStream($topic,$partition);
-            	
-            	break;
+                $this->innerStream = $payloadBuffer;
+                $this->innerOffset = $offset;
+                return $this->loadMessageFromInnerStream($topic,$partition);
+                
+                break;
         }
         $result =  new Kafka_Message(
             $topic,
@@ -516,29 +533,29 @@ abstract class Kafka_0_7_Channel
      */
     private function loadMessageFromInnerStream($topic, $partition)
     {
-    	if (!is_resource($this->innerStream))
-    	{
-    		throw new Kafka_Exception("Invalid inner message stream");
-    	}
-    	try { 
-	    	if ($innerMessage = $this->loadMessage(
-	    			$topic, 
-	    			$partition, 
-	    			clone $this->innerOffset, 
-	    			$this->innerStream
-	    		)
-	    	)
-	    	{
-	    		return $innerMessage;
-	    	}
-    	} catch (Kafka_Exception_EndOfStream $e)
-    	{    		
-    		//finally
-    	}
-    	fclose($this->innerStream);
-    	$this->innerStream = null;
-    	return false;
-    	 
+        if (!is_resource($this->innerStream))
+        {
+            throw new Kafka_Exception("Invalid inner message stream");
+        }
+        try { 
+            if ($innerMessage = $this->loadMessage(
+                    $topic, 
+                    $partition, 
+                    clone $this->innerOffset, 
+                    $this->innerStream
+                )
+            )
+            {
+                return $innerMessage;
+            }
+        } catch (Kafka_Exception_EndOfStream $e)
+        {
+            //finally
+        }
+        fclose($this->innerStream);
+        $this->innerStream = null;
+        return false;
+         
     }
     
     

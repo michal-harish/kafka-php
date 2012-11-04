@@ -81,11 +81,7 @@ implements Kafka_IConsumer
         $data .= pack('N', $maxFetchSize); //int
         if ($this->send($data))
         {
-            if (!$this->hasIncomingData())
-            {
-                return FALSE;
-            }
-            return TRUE;
+            return $this->hasIncomingData();
         }
     }
 
@@ -108,7 +104,7 @@ implements Kafka_IConsumer
                     $this->topic,
                     $this->partition,
                     clone $this->offset
-                );                
+                );
                 $this->offset->addInt($this->getReadBytes());
 
                 return $message;

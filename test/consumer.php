@@ -2,7 +2,7 @@
 $time = microtime(true);
 //bootstrap 
 chdir(dirname(__FILE__));
-require "../src/Kafka/Kafka.php";
+require "../src/Kafka.php";
 
 //default properties
 $kafkaHost = 'localhost';

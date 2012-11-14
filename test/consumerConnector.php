@@ -7,8 +7,8 @@ require "../src/Kafka.php";
 
 $topic = "adviews";
 
-$cc = new ConsumerConnector("bl-queue-s01:2181");
-$messageStreams = $cc->createMessageStreams($topic, 65535 * 8);
+$cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
+$messageStreams = $cc->createMessageStreams($topic, 65535);
 
 $counter = 0;
 

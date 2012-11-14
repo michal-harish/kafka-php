@@ -1,6 +1,6 @@
 <?php
 
-class ConsumerConnector
+class Kafka_ConsumerConnector
 {
     /**
      * Zookeeper Connection
@@ -41,7 +41,7 @@ class ConsumerConnector
             for ($partition = 0; $partition < $partitionCount; $partition++)
             {
                 // $messageStreams[] = $kafka->createConsumer();
-                $messageStreams[] = new MessageStream(
+                $messageStreams[] = new Kafka_MessageStream(
                     $kafka,
                     $topic,
                     $partition,

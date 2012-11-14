@@ -1,6 +1,6 @@
 <?php
 
-class MessageStream
+class Kafka_MessageStream
 {
     private $consumer;
 

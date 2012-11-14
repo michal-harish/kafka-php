@@ -1,9 +1,9 @@
 <?php
 /**
  * Kafka connection object.
- * Currently connects to a single broker, it can be later on extended to provide an auto-balanced 
+ * Currently connects to a single broker, it can be later on extended to provide an auto-balanced
  * connection to the cluster of borkers without disrupting the client code.
- *  
+ *
  * @author michal.harish@gmail.com
  */
 
@@ -12,6 +12,8 @@ include "Offset.php";
 include "Message.php";
 include "IProducer.php";
 include "IConsumer.php";
+include "ConsumerConnector.php";
+include "MessageStream.php";
 
 class Kafka
 {
@@ -56,7 +58,7 @@ class Kafka
     {
         $this->host = $host;
         $this->port = $port;
-        $this->timeout = $timeout;       
+        $this->timeout = $timeout;
         if ($kapiVersion < 0.8)
         {
             $kapiImplementation = "0_7";
@@ -74,9 +76,9 @@ class Kafka
         include_once "{$kapiImplementation}/ProducerChannel.php";
         $this->producerClass = "Kafka_{$kapiImplementation}_ProducerChannel";
         include_once "{$kapiImplementation}/ConsumerChannel.php";
-        $this->consumerClass = "Kafka_{$kapiImplementation}_ConsumerChannel";       
+        $this->consumerClass = "Kafka_{$kapiImplementation}_ConsumerChannel";
     }
-    
+
     /**
      * @return string "protocol://<host>:<port>";
      */
@@ -84,7 +86,7 @@ class Kafka
     {
         return "tcp://{$this->host}:{$this->port}";
     }
-    
+
     /**
      * @return int
      */
@@ -101,7 +103,7 @@ class Kafka
         $producerClass = $this->producerClass;
         return new $producerClass($this);
     }
-    
+
     /**
      * @return Kafka_IConsumer
      */

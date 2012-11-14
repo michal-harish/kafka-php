@@ -5,7 +5,7 @@
  * At this level the Kafka API version is transparent
  * to the client code. Different implementations
  * of this interface are provided for each version of Kafka API.
- * 
+ *
  * @author michal.harish@gmail.com
  */
 
@@ -18,7 +18,7 @@ interface Kafka_IConsumer
 
     /**
      * FetchRequest
-     * 
+     *
      * @param string $topic
      * @param int $partition
      * @param Kafka_Offset $offset - Offset to fetch messages from
@@ -31,7 +31,7 @@ interface Kafka_IConsumer
         $partition = 0,
         Kafka_Offset $offset = NULL,
         $maxFetchSize = 1000000
-    );    
+    );
 
     /**
      * The main method that pulls for messages
@@ -57,7 +57,7 @@ interface Kafka_IConsumer
 
     /**
      * OffsetsRequest
-     * 
+     *
      * @param string $topic
      * @param int $partition
      * @param mixed $time - can be unixtimestamp or hex offset

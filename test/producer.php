@@ -1,25 +1,30 @@
 <?php
-//bootstrap 
+
+// bootstrap
 chdir(dirname(__FILE__));
 require "../src/Kafka.php";
-//arguments
-$topic = isset($_SERVER['argv'][1]) 
-    ? $_SERVER['argv'][1] 
+
+// arguments
+$topic = isset($_SERVER['argv'][1])
+    ? $_SERVER['argv'][1]
     : exit("\nUsage: php producer.php <topic_name>\n\n");
-//connection
+
+// connection
 $kafka = new Kafka('localhost', 9092, 6, 0.71);
-//request channel
+
+// request channel
 $producer = $kafka->createProducer();
-//add a few messages
+
+// add a few messages
 $producer->add(
     new Kafka_Message(
-        $topic, 0,    
+        $topic, 0,
         'MESSAGE 1 - passed as uncompressed message object',
         Kafka::COMPRESSION_NONE
     )
 );
 
-for($i=2; $i<100; $i++)
+for ($i=2; $i<100; $i++)
 {
 	$producer->add(
 		new Kafka_Message(
@@ -30,7 +35,6 @@ for($i=2; $i<100; $i++)
 	);
 }
 
-
 $producer->add(
     new Kafka_Message(
         'test', 0,
@@ -38,9 +42,11 @@ $producer->add(
         Kafka::COMPRESSION_GZIP
     )
 );
+
 if ($producer->produce())
 {
     echo "\nPublished.\n\n";
 }
-//go home
+
+// go home
 $producer->close();

@@ -1,6 +1,6 @@
 <?php
 $time = microtime(true);
-//bootstrap 
+//bootstrap
 chdir(dirname(__FILE__));
 require "../src/Kafka.php";
 
@@ -11,7 +11,7 @@ $topic = NULL;
 $partition = 0;
 $offsetHex = NULL;
 
-//read arguments 
+//read arguments
 $args = array_slice($_SERVER['argv'],1);
 while ($arg = array_shift($args))
 {
@@ -45,13 +45,13 @@ $kafka = new Kafka($kafkaHost, $kafkaPort);
 $consumer = $kafka->createConsumer();
 
 //offsets request
-while (true) {	
+while (true) {
 	try {
 		$offsets = $consumer->offsets($topic, $partition);
 		break;
 	} catch (Kafka_Exception $e)
 	{
-		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();		
+		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();
 		if (--$partition<0) break;
 	}
 }
@@ -75,7 +75,7 @@ while ($consumer->fetch($topic, 0, $watermark))
             $processed = FALSE;
             do {
                 try {
-                    //no state has been modified yet, but there can be errors when fetching etc.                                
+                    //no state has been modified yet, but there can be errors when fetching etc.
                     if (rand(0,100) == 0)
                     {
                         throw new Exception('Simulation of consumer failure in a consistent state.');
@@ -87,12 +87,12 @@ while ($consumer->fetch($topic, 0, $watermark))
                     {
                         throw new Exception('Simulation of consumer failure - THE ERROR OCCURED WHILE THERE IS AN INCONSISTENT STATE CREATED BY PARTIALLY PROCESSED MESSAGE!');
                     }
-                    //if processing went fine, we get the new new watermark, but it's not over yet                 
-                    $watermark = $consumer->getWatermark();                            
+                    //if processing went fine, we get the new new watermark, but it's not over yet
+                    $watermark = $consumer->getWatermark();
                     /* Now store the watermark somerwhere..
                     ** Only when the new watermark has been stored, we're consistent again
-                    ** and we can consider the last message 'processed' 
-                    ******************************************************************************/                 
+                    ** and we can consider the last message 'processed'
+                    ******************************************************************************/
                     $consistent = TRUE;
                     $processed = TRUE;
                     $payload = $message->payload();

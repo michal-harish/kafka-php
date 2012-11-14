@@ -1,47 +1,60 @@
+#!/usr/bin/env php
 <?php
-$time = microtime(true);
-//bootstrap
-chdir(dirname(__FILE__));
-require "../src/Kafka.php";
 
-//default properties
+/**
+ * Consumer
+ *
+ * TODO
+ *
+ * @author      Michal Haris <michal.harish@gmail.com>
+ */
+
+$time = microtime(true);
+
+// bootstrap
+require dirname(__FILE__) . "/../src/Kafka.php";
+
+// default properties
 $kafkaHost = 'localhost';
 $kafkaPort = 9092;
 $topic = NULL;
 $partition = 0;
 $offsetHex = NULL;
 
-//read arguments
-$args = array_slice($_SERVER['argv'],1);
-while ($arg = array_shift($args))
-{
-    switch($arg)
-    {
+// read optional arguments
+$args = array_slice($_SERVER['argv'], 1);
+
+while ($arg = array_shift($args)) {
+    switch($arg) {
         case '--broker':
             $connection = explode(':', array_shift($args));
             $kafkaHost = array_shift($connection);
             if ($connection) $kafkaPort = array_shift($connection);
-        break;
+            break;
     	case '--partition':
     		$partition= array_shift($args);
     		break;
         case '--offset':
             $offsetHex = array_shift($args);
-        break;
+            break;
         default:
             $topic = $arg;
-        break;
+            break;
     }
 }
+
 if (!$topic)
 {
-    exit("\nUsage: php consumer.php <topicname> [--offset <hex_offset>] [--broker <kafka_host:kafka_port>]\n\n");
+    exit(
+        "\nUsage: php consumer.php <topicname> [--offset <hex_offset>] " .
+        "[--broker <kafka_host:kafka_port>]\n\n"
+    );
 }
 
-//connection
+// connection
 $kafka = new Kafka($kafkaHost, $kafkaPort);
 
-//consumer
+// consumer
 $consumer = $kafka->createConsumer();
 
 //offsets request
@@ -49,22 +62,23 @@ while (true) {
 	try {
 		$offsets = $consumer->offsets($topic, $partition);
 		break;
-	} catch (Kafka_Exception $e)
-	{
+	} catch (Kafka_Exception $e) {
 		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();
 		if (--$partition<0) break;
 	}
 }
+
 echo "\nOFFSETS REQUEST LATEST `$topic:$partition` = ". $offsets[0] . "\n";
-if ($offsetHex === NULL || $offsetHex > $offsets[0])
-{
+if ($offsetHex === NULL || $offsetHex > $offsets[0]) {
     $offsetHex = $offsets[0];
 }
 
 //initialize watermark offset
 $watermark = new Kafka_Offset($offsetHex);
+
 //fetch request
 $totalProcessed = 0;
+
 echo "\nFETCH REQUEST FROM WATERMARK OFFSET: $watermark\n";
 while ($consumer->fetch($topic, 0, $watermark))
 {
@@ -122,4 +136,4 @@ echo "\nNO MORE MESSAGES, TOTAL PROCESSED MESSAGES: $totalProcessed, NEW WATERMA
 //go home
 $consumer->close();
 
-echo "PROCESSING TIME: " . (microtime(true) - $time);
+echo "PROCESSING TIME: " . (microtime(true) - $time) . "\n";

@@ -1,4 +1,4 @@
-kafka-php
+Kafka PHP
 =========
 
 This is an alternative to the existing Kafka PHP Client which is in the incubator,
@@ -22,14 +22,58 @@ There are few differences to the existing Kafka PHP client:
     - Producer compresses batches of consecutive messages with same compression codec as a single message 
 
 
-
-
-Examples
+Sample consumers
 ========
 
-/>php ./test/consumer.php <topic> --offset <start-offset>  
-/>php ./test/producer.php <topic>
+Consumer that will consume a single message
+-------------
 
+    require dirname(__FILE__) . "/src/Kafka.php";
+
+    $cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
+    $messageStreams = $cc->createMessageStreams("adviews", 65535);
+    foreach ($messageStreams as $mid => $messageStream) {
+        while ($message = $messageStream->nextMessage()) {
+            echo $message->payload() . "\n";
+            die;
+        }
+    }
+
+
+Consumer that will consume all the messages from a topic
+-------------
+
+    require dirname(__FILE__) . "/src/Kafka.php";
+
+    $cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
+    $messageStreams = $cc->createMessageStreams("adviews", 65535);
+
+    while (true) {
+        $fetchCount = 0;
+
+        foreach ($messageStreams as $mid => $messageStream) {
+            while ($message = $messageStream->nextMessage()) {
+                $fetchCount ++;
+                echo $message->payload() . "\n";
+            }
+            echo "\n";
+        }
+
+        if ($fetchCount == 0) {
+            echo "No more messages.\n";
+            die;
+        }
+    }
+
+
+Example Scripts
+========
+
+    ./examples/consumer <topic> --offset <start-offset>  
+    ./examples/producer <topic>
+    ./examples/advanced-consumer <topic> <connector>
+
+    ./examples/advanced-consumer pageviews bl-queue-s01:2181
 
 
 Backlog
@@ -53,4 +97,3 @@ Backlog
     - could not compile snappy.so on 64-bit :(
  * TODO - implement the new versioned wire format 0.8 and acknowledgements 
     - waiting for a stable 0.8 candidate
-

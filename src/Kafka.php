@@ -1,8 +1,11 @@
 <?php
+
 /**
  * Kafka connection object.
- * Currently connects to a single broker, it can be later on extended to provide an auto-balanced
- * connection to the cluster of borkers without disrupting the client code.
+ *
+ * Currently connects to a single broker, it can be later on extended to provide
+ * an auto-balanced connection to the cluster of borkers without disrupting the
+ * client code.
  *
  * @author michal.harish@gmail.com
  */
@@ -33,7 +36,7 @@ class Kafka
     const OFFSETS_LATEST = "ffffffffffffffff"; //-1L
     const OFFSETS_EARLIEST = "fffffffffffffffe"; //-2L
 
-    //connection properties
+    // connection properties
     private $host;
     private $port;
     private $timeout;
@@ -41,6 +44,8 @@ class Kafka
     private $consumerClass;
 
     /**
+     * Constructor
+     *
      * @param string $host
      * @param int $port
      * @param int $timeout

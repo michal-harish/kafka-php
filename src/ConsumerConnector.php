@@ -1,28 +1,46 @@
 <?php
 
+/**
+ * Kafka Consumer Connector
+ *
+ * Consumer Connector is the class that will provide the main methods to
+ * access to Kafka messages.
+ *
+ * @author     Pau Gay <pau.gay@gmail.com>
+ */
+
 class Kafka_ConsumerConnector
 {
     /**
      * Zookeeper Connection
      *
-     * TODO
+     * @var Zookeeper
      */
     private $zk;
 
     /**
      * Kafka Broker list
      *
-     * TODO
+     * List of Kafka brokers that will provide the connection to the
+     * different partitions.
+     *
+     * @var Array
      */
     private $kafkaBrokerList;
 
+    /**
+     * Construct
+     */
     public function __construct($zkConnect)
     {
-        $this->zk = new zookeeper($zkConnect);
+        $this->zk = new Zookeeper($zkConnect);
     }
 
     /**
-     * TODO
+     * Create message streams
+     *
+     * @param String $topic
+     * @param Integer $maxFetchSize
      *
      * @return Array Array containing the list of consumer streams
      */
@@ -32,15 +50,14 @@ class Kafka_ConsumerConnector
 
         $messageStreams = array();
 
-        foreach ($topicBrokers as $brokerId)
-        {
-            $partitionCount = $this->zk->get("/brokers/topics/$topic/$brokerId");
+        foreach ($topicBrokers as $brokerId) {
+            $partitionCount = $this->zk->get(
+                "/brokers/topics/$topic/$brokerId"
+            );
 
             $kafka = $this->getKafkaByBrokerId($brokerId);
 
-            for ($partition = 0; $partition < $partitionCount; $partition++)
-            {
-                // $messageStreams[] = $kafka->createConsumer();
+            for ($partition = 0; $partition < $partitionCount; $partition++) {
                 $messageStreams[] = new Kafka_MessageStream(
                     $kafka,
                     $topic,
@@ -54,17 +71,19 @@ class Kafka_ConsumerConnector
     }
 
     /**
+     * Get Kafka by Broker Id.
+     *
+     * @param String $brokerId
      *
      * @return Kafka
      */
     private function getKafkaByBrokerId($brokerId)
     {
-        if (!isset($this->brokerList[$brokerId]))
-        {
-            $tmp = $this->zk->get("/brokers/ids/$brokerId");
-
+        // check if it exists, and if it doesn't, create it
+        if (!isset($this->brokerList[$brokerId])) {
             // will return something like:
-            // bl-queue-s03.visualdna.com-1352233014814:bl-queue-s03.visualdna.com:9092
+            // {something}-{numbers_that_looks_like_timestamp}:{host}:{port}
+            $tmp = $this->zk->get("/brokers/ids/$brokerId");
 
             $parts = explode(":", $tmp);
 
@@ -76,7 +95,7 @@ class Kafka_ConsumerConnector
             // instantiate the kafka broker representation
             $kafka = new Kafka($host, $port);
 
-            //consumer
+            // add the kafka bronker to the list
             $this->kafkaBrokerList[$brokerId] = $kafka;
         }
 

@@ -69,10 +69,13 @@ Consumer that will consume all the messages from a topic
 Example Scripts
 ========
 
-    ./examples/consumer <topic> --offset <start-offset>  
-    ./examples/producer <topic>
-    ./examples/advanced-consumer <topic> <connector>
+    ./examples/producer {topic}
+    ./examples/producer test-topic
 
+    ./examples/consumer {topic} --offset {start-offset}
+    ./examples/consumer test-topic --offset 0
+
+    ./examples/advanced-consumer {topic} {connector}
     ./examples/advanced-consumer pageviews bl-queue-s01:2181
 
 

@@ -75,8 +75,11 @@ Example Scripts
     ./examples/consumer {topic} --offset {start-offset}
     ./examples/consumer test-topic --offset 0
 
-    ./examples/advanced-consumer {topic} {connector}
-    ./examples/advanced-consumer pageviews bl-queue-s01:2181
+    ./examples/advanced-consumer {connector} {topic}
+    ./examples/advanced-consumer bl-queue-s01:2181 test
+
+    ./examples/advanced-producer {connector} {topic} {message}
+    ./examples/advanced-producer bl-queue-s01:2181 test "Message 1"
 
 
 Backlog

@@ -13,8 +13,8 @@
 // bootstrap
 require dirname(__FILE__) . "/../src/Kafka.php";
 
-$topic = $argv[1];
-$connector = $argv[2];
+$connector = $argv[1];
+$topic = $argv[2];
 
 // $cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
 $cc = new Kafka_ConsumerConnector($connector);

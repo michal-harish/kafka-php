@@ -1,7 +1,7 @@
 <?php
 /**
  * Consumer channel for FetchRequest and OffsetReqeust.
- * 
+ *
  * @author michal.harish@gmail.com
  *
  */
@@ -16,7 +16,7 @@ implements Kafka_IConsumer
      * @var string
      */
     private $topic;
-    
+
     /**
      * @var int
      */
@@ -28,7 +28,7 @@ implements Kafka_IConsumer
     private $offset;
 
     /**
-     * @param Kafka $connection 
+     * @param Kafka $connection
      */
     public function __construct(Kafka $connection)
     {
@@ -37,16 +37,16 @@ implements Kafka_IConsumer
 
     /**
      * @param string $topic
-     * @param int $partition 
+     * @param int $partition
      * @param Kafka_Offset $offset - Offset to fetch messages from
-     * @param int $maxFetchSize - Maximum bytes in a single fetch request 
+     * @param int $maxFetchSize - Maximum bytes in a single fetch request
      * @throws Kafka_Exception
      * @return bool Ready-to-read state
      */
-    public function fetch( 
+    public function fetch(
         $topic,
         $partition = 0,
-        Kafka_Offset $offset = NULL, 
+        Kafka_Offset $offset = NULL,
         $maxFetchSize = 1000000
     )
     {
@@ -73,7 +73,7 @@ implements Kafka_IConsumer
                 "Maximum fetch size must be a positive integer."
             );
         }
-        //format the 0.7 fetch request 
+        //format the 0.7 fetch request
         $data = pack('n', Kafka::REQUEST_KEY_FETCH);//short
         $data .= pack('n', strlen($this->topic)) . $this->topic;//short string
         $data .= pack('N', $this->partition);//int
@@ -130,13 +130,13 @@ implements Kafka_IConsumer
     {
         return clone $this->offset;
     }
-    
+
     /**
      * OffsetsRequest
      * Enter description here ...
      * @param string $topic
      * @param int $partition
-     * @param mixed $time 
+     * @param mixed $time
      * @param unknown_type $maxNumOffsets
      */
     public function offsets(

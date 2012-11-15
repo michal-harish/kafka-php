@@ -8,10 +8,16 @@ require "../src/Kafka.php";
 // arguments
 $topic = isset($_SERVER['argv'][1])
     ? $_SERVER['argv'][1]
-    : exit("\nUsage: php producer.php <topic_name>\n\n");
+    : exit("\nUsage: php producer.php <topic_name> [<host:port>]\n\n");
 
+$host = 'localhost';
+$port = 9092;
+if (isset($_SERVER['argv'][2]))
+{
+    list($host,$port) = explode(":", $_SERVER['argv'][2]);
+}
 // connection
-$kafka = new Kafka('localhost', 9092, 6, 0.71);
+$kafka = new Kafka($host, $port, 6, 0.71);
 
 // request channel
 $producer = $kafka->createProducer();

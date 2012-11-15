@@ -1,32 +1,37 @@
 <?php
+
 /**
+ * Kafka message
+ *
  * Kafka Message object used both for producing and conusming messages.
- * Handles format detection from the stream as well as compression/decompression 
- * of the payload and crc validation. 
- * 
+ * Handles format detection from the stream as well as compression/decompression
+ * of the payload and crc validation.
+ *
  * @author michal.harish@gmail.com
  */
 
 class Kafka_Message
-{        
+{
     private $topic;
     private $partition;
     private $offset;
     private $compression;
     private $payload;
+
     /**
      * Constructor is private used by the static creator methods below.
-     * 
+     *
      * @param string $topic
      * @param int $partition
      * @param string $payload
      * @param int $compression
      * @param Kafka_Offset $offset
+     *
      * @throws Kafka_Exception
      */
     public function __construct(
         $topic,
-        $partition,        
+        $partition,
         $payload,
         $compression = Kafka::COMPRESSION_NONE,
         Kafka_Offset $offset = NULL
@@ -40,7 +45,7 @@ class Kafka_Message
         if (!is_numeric($partition) || $partition < 0)
         {
             throw new Kafka_Exception("Partition must be a positive integer or 0.");
-        }        
+        }
         $this->topic = $topic;
         $this->partition = $partition;
         if ($offset === NULL)
@@ -59,7 +64,7 @@ class Kafka_Message
     {
         return $this->topic;
     }
-    
+
     /**
      * @return partition
      */
@@ -67,7 +72,7 @@ class Kafka_Message
     {
         return $this->partition;
     }
-    
+
     /**
      * Final value of the uncompressed payload
      * @return string
@@ -93,5 +98,4 @@ class Kafka_Message
     {
         return clone $this->offset;
     }
-    
 }

@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Advanced producer
+ *
+ * Script that will demonstrate a nice way to produce events from Kafka.
+ *
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2012-11-15
+ */
+
+// bootstrap
+require dirname(__FILE__) . "/../src/Kafka.php";
+
+// get script parameters
+$connector = $argv[1];
+$topic = $argv[2];
+$payload = $argv[3];
+
+// create the producer
+$pc = new Kafka_ProducerConnector($connector);
+
+// add the messages (randomly distrubuted to the different broker/partitions)
+$pc->addMessage($topic, $payload);
+
+// produce the actual messages into kafka
+$pc->produce();

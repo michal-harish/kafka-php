@@ -16,6 +16,7 @@ include "Message.php";
 include "IProducer.php";
 include "IConsumer.php";
 include "ConsumerConnector.php";
+include "ProducerConnector.php";
 include "MessageStream.php";
 
 class Kafka

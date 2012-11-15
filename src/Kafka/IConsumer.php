@@ -9,7 +9,9 @@
  * @author michal.harish@gmail.com
  */
 
-interface Kafka_IConsumer
+namespace Kafka;
+
+interface IConsumer
 {
     /**
      * @param Kafka $connection
@@ -21,15 +23,15 @@ interface Kafka_IConsumer
      *
      * @param string $topic
      * @param int $partition
-     * @param Kafka_Offset $offset - Offset to fetch messages from
+     * @param Offset $offset - Offset to fetch messages from
      * @param int $maxFetchSize - Maximum bytes in a single fetch request
-     * @throws Kafka_Exception
+     * @throws \Kafka\Exception
      * @return bool Ready-to-read state
      */
     public function fetch(
         $topic,
         $partition = 0,
-        Kafka_Offset $offset = NULL,
+        Offset $offset = NULL,
         $maxFetchSize = 1000000
     );
 
@@ -40,8 +42,8 @@ interface Kafka_IConsumer
      * so that next time another request is made to the connection
      * if the program wants to check again later.
      *
-     * @throws Kafka_Exception
-     * @return Kafka_Message | FLASE if no more messages
+     * @throws \Kafka\Exception
+     * @return Message | FLASE if no more messages
      */
     public function nextMessage();
 
@@ -51,7 +53,7 @@ interface Kafka_IConsumer
      * It is different from the nextMessage()->getOffset() in that
      * it points to the offset "after" that message.
      *
-     * @return Kafka_Offset
+     * @return Offset
      */
     public function getWatermark();
 
@@ -66,7 +68,7 @@ interface Kafka_IConsumer
     public function offsets(
         $topic,
         $partition = 0,
-        $time = Kafka::OFFSETS_LATEST,
+        $time = \Kafka\Kafka::OFFSETS_LATEST,
         $maxNumOffsets = 2
     );
 

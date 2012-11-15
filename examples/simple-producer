@@ -3,7 +3,7 @@
 
 // bootstrap
 chdir(dirname(__FILE__));
-require "../src/Kafka.php";
+require "../src/Kafka/Kafka.php";
 
 // arguments
 $topic = isset($_SERVER['argv'][1])
@@ -17,36 +17,39 @@ if (isset($_SERVER['argv'][2]))
     list($host,$port) = explode(":", $_SERVER['argv'][2]);
 }
 // connection
-$kafka = new Kafka($host, $port, 6, 0.71);
+$kafka = new \Kafka\Kafka($host, $port, 6, 0.71);
 
 // request channel
 $producer = $kafka->createProducer();
 
 // add a few messages
 $producer->add(
-    new Kafka_Message(
-        $topic, 0,
+    new \Kafka\Message(
+        $topic,
+        0,
         'MESSAGE 1 - passed as uncompressed message object',
-        Kafka::COMPRESSION_NONE
+        \Kafka\Kafka::COMPRESSION_NONE
     )
 );
 
 for ($i=2; $i<100; $i++)
 {
 	$producer->add(
-		new Kafka_Message(
-			$topic, 0,
+		new \Kafka\Message(
+            $topic,
+            0,
 			"MESSAGE $i - passed as consecutive compressed message object",
-			Kafka::COMPRESSION_GZIP
+			\Kafka\Kafka::COMPRESSION_GZIP
 		)
 	);
 }
 
 $producer->add(
-    new Kafka_Message(
-        'test', 0,
+    new \Kafka\Message(
+        'test',
+        0,
         'MESSAGE 100 - passed as compressed message object to a different topic `test`',
-        Kafka::COMPRESSION_GZIP
+        \Kafka\Kafka::COMPRESSION_GZIP
     )
 );
 

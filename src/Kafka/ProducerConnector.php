@@ -10,7 +10,9 @@
  * @date       2012-11-15
  */
 
-class Kafka_ProducerConnector
+namespace Kafka;
+
+class ProducerConnector
 {
     /**
      * Zookeeper Connection
@@ -48,7 +50,7 @@ class Kafka_ProducerConnector
      * List of Kafka Producer Channels that provide the connection to the
      * different partitions.
      *
-     * @var Array of Kafka_IProducer
+     * @var Array of IProducer
      */
     private $producerList;
 
@@ -57,7 +59,7 @@ class Kafka_ProducerConnector
      */
     public function __construct($zkConnect)
     {
-        $this->zk = new Zookeeper($zkConnect);
+        $this->zk = new \Zookeeper($zkConnect);
 
         $this->discoverTopics();
     }
@@ -106,11 +108,11 @@ class Kafka_ProducerConnector
     public function addMessage(
         $topic,
         $payload,
-        $compression = Kafka::COMPRESSION_NONE
+        $compression = \Kafka\Kafka::COMPRESSION_NONE
     )
     {
         // random paritioner hardcode for now
-        // TODO create Kafka_Partitioner class and Kafka_Partitioner
+        // TODO create Partitioner class and \Kafka\Partitioner
 
         // randomly get which partition we will use
         $i = rand(0, count($this->topicPartitionMapping[$topic]) - 1);
@@ -122,7 +124,7 @@ class Kafka_ProducerConnector
         $partition = $partitionInfo['partition'];
 
         // build the message
-        $message = new Kafka_Message(
+        $message = new Message(
             $topic,
             $partition,
             $payload,
@@ -153,7 +155,7 @@ class Kafka_ProducerConnector
      * Method that given a broker id, it will create the producer and
      * will return it.
      *
-     * @return Kafka_IProducer
+     * @return IProducer
      */
     private function getProducerByBrokerId($brokerId)
     {

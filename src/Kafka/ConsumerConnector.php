@@ -9,7 +9,9 @@
  * @author     Pau Gay <pau.gay@gmail.com>
  */
 
-class Kafka_ConsumerConnector
+namespace Kafka;
+
+class ConsumerConnector
 {
     /**
      * Zookeeper Connection
@@ -33,7 +35,7 @@ class Kafka_ConsumerConnector
      */
     public function __construct($zkConnect)
     {
-        $this->zk = new Zookeeper($zkConnect);
+        $this->zk = new \Zookeeper($zkConnect);
     }
 
     /**
@@ -58,7 +60,7 @@ class Kafka_ConsumerConnector
             $kafka = $this->getKafkaByBrokerId($brokerId);
 
             for ($partition = 0; $partition < $partitionCount; $partition++) {
-                $messageStreams[] = new Kafka_MessageStream(
+                $messageStreams[] = new MessageStream(
                     $kafka,
                     $topic,
                     $partition,

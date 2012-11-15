@@ -2,12 +2,12 @@
 <?php
 
 /**
- * Advanced consumer
+ * Consumer daemon
  *
- * Script that will demonstrate a nice way to consume events from Kafka.
+ * Script that will listen for events to a given topic.
  *
  * @author      Pau Gay <pau.gay@visualdna.com>
- * @date        2012-11-14
+ * @date        2012-11-15
  */
 
 // bootstrap
@@ -19,25 +19,17 @@ $topic = $argv[2];
 $cc = new \Kafka\ConsumerConnector($connector);
 $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
 
-$counter = 0;
-
 while (true) {
     $fetchCount = 0;
 
     foreach ($messageStreams as $mid => $messageStream) {
         while ($message = $messageStream->nextMessage()) {
-            $counter++;
-            $fetchCount ++;
-            echo str_repeat(chr(8), 10);
-            echo str_pad($mid . ' ' . $counter, 10, ' ');
+            var_dump($message->payload());
+            echo "\n";
         }
-        echo "\n";
     }
 
     if ($fetchCount == 0) {
         sleep(1);
-        exit();
     }
 }
-
-echo "Counter = $counter\n";

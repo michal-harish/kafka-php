@@ -1,33 +1,51 @@
 <?php
+
 /**
+ * Consumer Channel
+ *
  * Consumer channel for FetchRequest and OffsetReqeust.
  *
- * @author michal.harish@gmail.com
- *
+ * @author     Michal Haris <michal.harish@gmail.com>
+ * @date       2012-11-15
  */
 
-include_once 'Channel.php';
+namespace Kafka\V07;
 
-class Kafka_0_7_ConsumerChannel extends Kafka_0_7_Channel
-implements Kafka_IConsumer
+use Kafka\Kafka;
+use Kafka\Message;
+use Kafka\Offset;
+use Kafka\IConsumer;
+
+require_once "Channel.php";
+
+class ConsumerChannel
+    extends Channel
+    implements IConsumer
 {
-
     /**
-     * @var string
+     * Topic
+     *
+     * @var String
      */
     private $topic;
 
     /**
-     * @var int
+     * Partition
+     *
+     * @var Integer
      */
     private $partition;
 
     /**
-     * @var Kafka_Offset
+     * Offset
+     *
+     * @var Offset
      */
     private $offset;
 
     /**
+     * Constructor
+     *
      * @param Kafka $connection
      */
     public function __construct(Kafka $connection)
@@ -36,70 +54,70 @@ implements Kafka_IConsumer
     }
 
     /**
+     * Fetch
+     *
      * @param string $topic
      * @param int $partition
-     * @param Kafka_Offset $offset - Offset to fetch messages from
+     * @param Offset $offset - Offset to fetch messages from
      * @param int $maxFetchSize - Maximum bytes in a single fetch request
-     * @throws Kafka_Exception
+     *
+     * @throws \Kafka\Exception
+     *
      * @return bool Ready-to-read state
      */
     public function fetch(
         $topic,
         $partition = 0,
-        Kafka_Offset $offset = NULL,
+        Offset $offset = null,
         $maxFetchSize = 1000000
     )
     {
-        if (!$topic || !is_string($topic))
-        {
-            throw new Kafka_Exception(
+        if (!$topic || !is_string($topic)) {
+            throw new \Kafka\Exception(
                    "Topic must be a non-empty string."
             );
         }
         $this->topic = $topic;
         $this->partition = $partition;
 
-        if ($offset === NULL)
-        {
-            $this->offset = new Kafka_Offset();
-        }
-        else
-        {
+        if ($offset === null) {
+            $this->offset = new Offset();
+        } else {
             $this->offset = clone $offset;
         }
-        if (!is_numeric($maxFetchSize) || $maxFetchSize <=0)
-        {
-            throw new Kafka_Exception(
+        if (!is_numeric($maxFetchSize) || $maxFetchSize <=0) {
+            throw new \Kafka\Exception(
                 "Maximum fetch size must be a positive integer."
             );
         }
         //format the 0.7 fetch request
-        $data = pack('n', Kafka::REQUEST_KEY_FETCH);//short
+        $data = pack('n', \Kafka\Kafka::REQUEST_KEY_FETCH);//short
         $data .= pack('n', strlen($this->topic)) . $this->topic;//short string
         $data .= pack('N', $this->partition);//int
         $data .= $this->offset->getData();//bigint
         $data .= pack('N', $maxFetchSize); //int
-        if ($this->send($data))
-        {
+        if ($this->send($data)) {
             return $this->hasIncomingData();
         }
     }
 
     /**
+     * Next message
+     *
      * The main method that pulls for messages
      * to come downstream. If there are no more messages
-     * it will turn off the readable state and return FALSE
+     * it will turn off the readable state and return false
      * so that next time another request is made to the connection
      * if the program wants to check again later.
      *
-     * @throws Kafka_Exception
-     * @return Kafka_Message | FLASE if no more messages
+     * @throws \Kafka\Exception
+     *
+     * @return \Kafka\Message | false if no more messages
      */
     public function nextMessage()
     {
         try {
-            if ($this->hasIncomingData())
-            {
+            if ($this->hasIncomingData()) {
                 $message = $this->loadMessage(
                     $this->topic,
                     $this->partition,
@@ -108,23 +126,23 @@ implements Kafka_IConsumer
                 $this->offset->addInt($this->getReadBytes());
 
                 return $message;
+            } else {
+                return false;
             }
-            else
-            {
-                return FALSE;
-            }
-        } catch (Kafka_Exception_EndOfStream $e) {
-            return FALSE;
+        } catch (\Kafka\Exception\EndOfStream $e) {
+            return false;
         }
     }
 
     /**
+     * Get watermark
+     *
      * The last offset position after connection or reading nextMessage().
      * This value should be used for keeping the consumption state.
      * It is different from the nextMessage()->getOffset() in that
      * it points to the offset "after" that message.
      *
-     * @return Kafka_Offset
+     * @return Offset
      */
     public function getWatermark()
     {
@@ -132,8 +150,8 @@ implements Kafka_IConsumer
     }
 
     /**
-     * OffsetsRequest
-     * Enter description here ...
+     * Offsets
+     *
      * @param string $topic
      * @param int $partition
      * @param mixed $time
@@ -142,46 +160,42 @@ implements Kafka_IConsumer
     public function offsets(
         $topic,
         $partition = 0,
-        $time = Kafka::OFFSETS_LATEST,
+        $time = \Kafka\Kafka::OFFSETS_LATEST,
         $maxNumOffsets = 2
     )
     {
-        $data = pack('n', Kafka::REQUEST_KEY_OFFSETS);
+        $data = pack('n', \Kafka\Kafka::REQUEST_KEY_OFFSETS);
         $data .= pack('n', strlen($topic)) . $topic;
         $data .= pack('N', $partition);
-        if (is_string($time))
-        {
+
+        if (is_string($time)) {
             //convert hex constant to a long offset
-            $offset = new Kafka_Offset($time);
-        }
-        else
-        {    //make 64-bit unix timestamp offset
-            $offset = new Kafka_Offset();
-            for($i=0; $i<1000 * 1; $i++)
-            {
+            $offset = new Offset($time);
+        } else {
+            //make 64-bit unix timestamp offset
+            $offset = new Offset();
+            for ($i=0; $i<1000 * 1; $i++) {
                 $offset->addInt($time);
             }
         }
         $data .= $offset->getData();
         $data .= pack('N', $maxNumOffsets);
         $this->send($data);
-        if ($this->hasIncomingData())
-        {
+
+        if ($this->hasIncomingData()) {
             $offsetsLength = array_shift(unpack('N', $this->read(4)));
-            if ($offsetsLength>0)
-            {
-                $offsets = array_fill(0, $offsetsLength, NULL);
-                for($i=0; $i<$offsetsLength; $i++)
-                {
-                    $offset = Kafka_Offset::createFromData($this->read(8));
+            if ($offsetsLength>0) {
+                $offsets = array_fill(0, $offsetsLength, null);
+                for ($i=0; $i<$offsetsLength; $i++) {
+                    $offset = Offset::createFromData($this->read(8));
                     $offsets[$i] = $offset;
                 }
-                if (!$this->hasIncomingData())
-                {
+                if (!$this->hasIncomingData()) {
                     return $offsets;
                 }
             }
         }
-       return FALSE;
+
+        return false;
     }
 }

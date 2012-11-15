@@ -12,7 +12,7 @@
 $time = microtime(true);
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka.php";
+require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 
 // default properties
 $kafkaHost = 'localhost';
@@ -52,7 +52,7 @@ if (!$topic)
 }
 
 // connection
-$kafka = new Kafka($kafkaHost, $kafkaPort);
+$kafka = new \Kafka\Kafka($kafkaHost, $kafkaPort);
 
 // consumer
 $consumer = $kafka->createConsumer();
@@ -62,7 +62,7 @@ while (true) {
 	try {
 		$offsets = $consumer->offsets($topic, $partition);
 		break;
-	} catch (Kafka_Exception $e) {
+	} catch (\Kafka\Exception $e) {
 		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();
 		if (--$partition<0) break;
 	}
@@ -74,7 +74,7 @@ if ($offsetHex === NULL || $offsetHex > $offsets[0]) {
 }
 
 //initialize watermark offset
-$watermark = new Kafka_Offset($offsetHex);
+$watermark = new \Kafka\Offset($offsetHex);
 
 //fetch request
 $totalProcessed = 0;

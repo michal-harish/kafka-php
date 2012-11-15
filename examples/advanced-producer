@@ -11,7 +11,7 @@
  */
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka.php";
+require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 
 // get script parameters
 $connector = $argv[1];
@@ -19,7 +19,7 @@ $topic = $argv[2];
 $payload = $argv[3];
 
 // create the producer
-$pc = new Kafka_ProducerConnector($connector);
+$pc = new \Kafka\ProducerConnector($connector);
 
 // add the messages (randomly distrubuted to the different broker/partitions)
 $pc->addMessage($topic, $payload);

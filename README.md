@@ -10,16 +10,16 @@ so the api doesn't need to follow the scala/java object graph and can be much si
  
 There are few differences to the existing Kafka PHP client:
      
-    - streaming message individually rather than loading the whole response into memory
-    - offset implemented by hexdecimal tranformation to fully support Kafka long offsets 
-    - gzip working correctly both ways, including the pre-compression message header
-    - messages produced in batch consumed correctly in compressed as well as uncompressed state
-    - crc32 check working
-    - Producers and Consumers are abstracted to allow for changes in Kafka API without disrupting the client code 
+    - Streaming message individually rather than loading the whole response into memory
+    - Offset implemented by hexdecimal tranformation to fully support Kafka long offsets
+    - Gzip working correctly both ways, including the pre-compression message header
+    - Messages produced in batch consumed correctly in compressed as well as uncompressed state
+    - CRC32 check working
+    - Producers and Consumers are abstracted to allow for changes in Kafka API without disrupting the client code
     - Broker abstraction for different connection strategies
     - OffsetRequest workaround for 64-bit unix timestamp
-    - Produce Request only checks correct bytes were sent (ack not available)
-    - Producer compresses batches of consecutive messages with same compression codec as a single message 
+    - Produce request only checks correct bytes were sent (ack not available)
+    - Producer compresses batches of consecutive messages with same compression codec as a single message
 
 
 Sample consumers
@@ -69,17 +69,20 @@ Consumer that will consume all the messages from a topic
 Example Scripts
 ========
 
-    ./examples/producer {topic}
-    ./examples/producer test-topic
+    ./examples/simple-producer {topic} {broker}
+    ./examples/simple-producer test-topic hq-mharis-d01:9092
 
-    ./examples/consumer {topic} --offset {start-offset}
-    ./examples/consumer test-topic --offset 0
-
-    ./examples/advanced-consumer {connector} {topic}
-    ./examples/advanced-consumer bl-queue-s01:2181 test
+    ./examples/simple-consumer {topic} --broker {broker} --offset {start-offset}
+    ./examples/simple-consumer test-topic --broker hq-mharis-d01:9092 --offset 0
 
     ./examples/advanced-producer {connector} {topic} {message}
-    ./examples/advanced-producer bl-queue-s01:2181 test "Message 1"
+    ./examples/advanced-producer hq-mharis-d01:2181 test "Message 1"
+
+    ./examples/advanced-consumer {connector} {topic}
+    ./examples/advanced-consumer hq-mharis-d01:2181 test
+
+    ./examples/consumer-daemon {connector} {topic}
+    ./examples/consumer-daemon hq-mharis-d01:2181 poker
 
 
 Backlog

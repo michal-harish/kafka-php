@@ -9,7 +9,9 @@
  * @author     Pau Gay <pau.gay@gmail.com>
  */
 
-class Kafka_MessageStream
+namespace Kafka;
+
+class MessageStream
 {
     /**
      * Consumer
@@ -17,7 +19,7 @@ class Kafka_MessageStream
      * The consumer that will provide the actual consumer from where we
      * will fetch and get the message.
      *
-     * @var Kafka_IConsumer
+     * @var IConsumer
      */
     private $consumer;
 
@@ -51,7 +53,7 @@ class Kafka_MessageStream
     /**
      * Offset
      *
-     * @var Kafka_Offset
+     * @var Offset
      */
     private $offset;
 
@@ -127,16 +129,16 @@ class Kafka_MessageStream
      * Method that will return the smallest offset (it's rarely "0", so
      * want to look it up in order to not fail).
      *
-     * @return Kafka_Offset
+     * @return Offset
      */
     private function getSmallestOffset()
     {
         $offsets = $this->consumer->offsets(
             $this->topic,
             $this->partition,
-            Kafka::OFFSETS_EARLIEST
+            \Kafka\Kafka::OFFSETS_EARLIEST
         );
 
-        return new Kafka_Offset($offsets[0]);
+        return new Offset($offsets[0]);
     }
 }

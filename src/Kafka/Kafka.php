@@ -10,19 +10,21 @@
  * @author michal.harish@gmail.com
  */
 
-include "Exception.php";
-include "Offset.php";
-include "Message.php";
-include "IProducer.php";
-include "IConsumer.php";
-include "ConsumerConnector.php";
-include "ProducerConnector.php";
-include "MessageStream.php";
+namespace Kafka;
+
+require_once "Exception.php";
+require_once "Offset.php";
+require_once "Message.php";
+require_once "IProducer.php";
+require_once "IConsumer.php";
+require_once "ConsumerConnector.php";
+require_once "ProducerConnector.php";
+require_once "MessageStream.php";
 
 class Kafka
 {
-    const MAGIC_0 = 0; //wire format without compression attribute
-    const MAGIC_1 = 1; //wire format with compression attribute
+    const MAGIC_0 = 0; // wire format without compression attribute
+    const MAGIC_1 = 1; // wire format with compression attribute
 
     const REQUEST_KEY_PRODUCE      = 0;
     const REQUEST_KEY_FETCH        = 1;
@@ -67,22 +69,22 @@ class Kafka
         $this->timeout = $timeout;
         if ($kapiVersion < 0.8)
         {
-            $kapiImplementation = "0_7";
+            $kapiImplementation = "V07";
         }
         elseif ($kapiVersion < 0.8)
         {
-            $kapiImplementation = "0_8";
+            $kapiImplementation = "V08";
         }
         else
         {
-            throw new Kafka_Exception(
+            throw new \Kafka\Exception(
                 "Unsupported Kafka API version $kapiVersion"
             );
         }
         include_once "{$kapiImplementation}/ProducerChannel.php";
-        $this->producerClass = "Kafka_{$kapiImplementation}_ProducerChannel";
+        $this->producerClass = "\Kafka\\$kapiImplementation\ProducerChannel";
         include_once "{$kapiImplementation}/ConsumerChannel.php";
-        $this->consumerClass = "Kafka_{$kapiImplementation}_ConsumerChannel";
+        $this->consumerClass = "\Kafka\\$kapiImplementation\ConsumerChannel";
     }
 
     /**
@@ -102,7 +104,7 @@ class Kafka
     }
 
     /**
-     * @return Kafka_IProducer
+     * @return IProducer
      */
     public function createProducer()
     {
@@ -111,7 +113,7 @@ class Kafka
     }
 
     /**
-     * @return Kafka_IConsumer
+     * @return IConsumer
      */
     public function createConsumer()
     {

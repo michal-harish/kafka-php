@@ -10,7 +10,11 @@
  * @author michal.harish@gmail.com
  */
 
-class Kafka_Message
+namespace Kafka;
+
+use Kafka\Offset;
+
+class Message
 {
     private $topic;
     private $partition;
@@ -25,32 +29,32 @@ class Kafka_Message
      * @param int $partition
      * @param string $payload
      * @param int $compression
-     * @param Kafka_Offset $offset
+     * @param Offset $offset
      *
-     * @throws Kafka_Exception
+     * @throws \Kafka\Exception
      */
     public function __construct(
         $topic,
         $partition,
         $payload,
-        $compression = Kafka::COMPRESSION_NONE,
-        Kafka_Offset $offset = NULL
+        $compression = \Kafka\Kafka::COMPRESSION_NONE,
+        Offset $offset = NULL
     )
     {
         if (!$topic)
         {
-            throw new Kafka_Exception("Topic name cannot be an empty string.");
+            throw new \Kafka\Exception("Topic name cannot be an empty string.");
         }
         $this->topic = $topic;
         if (!is_numeric($partition) || $partition < 0)
         {
-            throw new Kafka_Exception("Partition must be a positive integer or 0.");
+            throw new \Kafka\Exception("Partition must be a positive integer or 0.");
         }
         $this->topic = $topic;
         $this->partition = $partition;
         if ($offset === NULL)
         {
-            new Kafka_Offset();
+            $offset = new Offset();
         }
         $this->offset = $offset;
         $this->compression = $compression;
@@ -92,7 +96,7 @@ class Kafka_Message
 
     /**
      * Final information about the message offset in the broker log.
-     * @return Kafka_Offset
+     * @return Offset
      */
     final public function offset()
     {

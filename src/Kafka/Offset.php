@@ -9,7 +9,9 @@
  * @author michal.harish@gmail.com
  */
 
-class Kafka_Offset
+namespace Kafka;
+
+class Offset
 {
     /**
      * the actual byte array of the value
@@ -23,14 +25,14 @@ class Kafka_Offset
      */
     public static function createFromData($data)
     {
-        $offset = new Kafka_Offset();
+        $offset = new Offset();
         $offset->data = $data;
         return $offset;
     }
 
     /**
      * Creating new offset can take initial hex value,
-     * e.g new Kafka_Offset("078c88cc700ff")
+     * e.g new Offset("078c88cc700ff")
      *
      * @param string $hex
      */
@@ -90,18 +92,18 @@ class Kafka_Offset
 
     /**
      * Add an offset interval
-     * @param Kafka_Offset $value
+     * @param Offset $value
      */
-    public function add(Kafka_Offset $value)
+    public function add(Offset $value)
     {
         $this->addData($value->data);
     }
 
     /**
      * Subtract an offset interval
-     * @param Kafka_Offset $value
+     * @param Offset $value
      */
-    public function sub(Kafka_Offset $value)
+    public function sub(Offset $value)
     {
         $this->subData($value->data);
     }
@@ -109,14 +111,14 @@ class Kafka_Offset
     /**
      * Internal parser for hex values
      * @param string $hex
-     * @throws Kafka_Exception
+     * @throws \Kafka\Exception
      */
     private function hexdata($hex)
     {
         $hex = str_pad($hex, 16, '0', STR_PAD_LEFT);
         $result = str_repeat(chr(0), 8);
         if (strlen($hex) != 16) {
-            throw new Kafka_Exception(
+            throw new \Kafka\Exception(
                 'Hexadecimal offset cannot have more than 16 digits'
             );
         }

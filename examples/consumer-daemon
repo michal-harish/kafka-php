@@ -13,23 +13,27 @@
 // bootstrap
 require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 
+// get script parameters
 $connector = $argv[1];
 $topic = $argv[2];
 
-$cc = new \Kafka\ConsumerConnector($connector);
-$messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
+$consumerConnector = new \Kafka\ConsumerConnector($connector);
+$messageStreams = $consumerConnector->createMessageStreams($topic, 65535 * 10);
 
 while (true) {
     $fetchCount = 0;
 
     foreach ($messageStreams as $mid => $messageStream) {
+        // keep getting messages, if we have more
         while ($message = $messageStream->nextMessage()) {
+            // just print
             var_dump($message->payload());
             echo "\n";
         }
     }
 
     if ($fetchCount == 0) {
+        // no more messages, so sleep and try again
         sleep(1);
     }
 }

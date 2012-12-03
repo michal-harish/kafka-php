@@ -202,6 +202,12 @@ class ProducerConnector
         $compression = \Kafka\Kafka::COMPRESSION_NONE
     )
     {
+        if (!array_key_exists($topic,$this->topicPartitionMapping))
+        {
+            throw new \Kafka\Exception(
+                "Unknown Kafka topic `$topic`"
+            );
+        }
         // random paritioner hardcode for now
         // TODO create Partitioner class and \Kafka\Partitioner
 

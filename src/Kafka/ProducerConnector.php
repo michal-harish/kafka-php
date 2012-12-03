@@ -8,18 +8,25 @@
  *
  * @author     Pau Gay <pau.gay@gmail.com>
  * @date       2012-11-15
+ * 
+ * The connector can be cached using serialize() function which will pack all the information
+ * retreived from zookeeper so that things don't have to be rediscovered at every request, but
+ * the application needs to decide how to do the actual caching.
+ * 
+ * @author     Michal Hairsh <michal.harish@gmail.com>
+ * @date 2012-12-03
  */
 
 namespace Kafka;
 
 class ProducerConnector
 {
+
     /**
-     * Zookeeper Connection
-     *
-     * @var Zookeeper
+     * ZooKeeper Connection String, i.e. coma-separated list of host:port items
+     * @var String
      */
-    private $zk;
+    private $zkConnect;
 
     /**
      * Topic to broker mapping
@@ -44,6 +51,33 @@ class ProducerConnector
      */
     private $topicPartitionMapping;
 
+
+    /**
+     * BrokerId - broker connector mapping
+     * 
+     * Mapping that contains only connection argument for individual brokers, 
+     * but not actual socket handle.
+     * 
+     * @format
+     *     array(
+     *         [brokerId] => array (
+     *           "name" => "{kafkaname}",
+     *           "host" => "{host}",
+     *           "port" => "{port}",
+     *         ),
+     *         ...
+     *     )
+     * @var Array
+     */
+    private $brokerMapping;
+
+    /**
+     * Zookeeper Connection
+     *
+     * @var Zookeeper
+     */
+    private $zk;
+
     /**
      * Producer list
      *
@@ -59,9 +93,41 @@ class ProducerConnector
      */
     public function __construct($zkConnect)
     {
-        $this->zk = new \Zookeeper($zkConnect);
-
+        $this->zkConnect = $zkConnect;
         $this->discoverTopics();
+        $this->discoverBrokers();
+    }
+
+    /**
+     * This is for cached connectors - only the properties retreived from zookeeper 
+     * are serialized but not actual connection handles.
+     * 
+     * @return multitype:string
+     */
+    public function __sleep()
+    {
+        return array('zkConnect', 'topicPartitionMapping', 'brokerMapping');
+    }
+
+    /**
+     * When waking up cached connector, we need to reset the handles so they
+     * are initialized when required.
+     */
+    public function __wakeup()
+    {
+        $this->zk = null;
+        $this->producerList = array();
+    }
+
+    /**
+     * Internal lazy connector for zookeeper.
+     */
+    private function zkConnect()
+    {
+        if ($this->zk == null)
+        {
+            $this->zk = new \Zookeeper($this->zkConnect);
+        }
     }
 
     /**
@@ -72,9 +138,12 @@ class ProducerConnector
      */
     private function discoverTopics()
     {
+        $this->zkConnect();
+
         // get the list of topics
         $topics = $this->zk->getChildren("/brokers/topics");
 
+        $this->topicPartitionMapping = array();
         foreach ($topics as $topic) {
             // get the list of brokers by topic
             $topicBrokers = $this->zk->getChildren("/brokers/topics/$topic");
@@ -91,6 +160,28 @@ class ProducerConnector
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Discover brokers' connection paramters.
+     */
+    private function discoverBrokers()
+    {
+        $this->zkConnect();
+
+        $this->brokerMapping = array();
+        $brokers = $this->zk->getChildren("/brokers/ids");
+        foreach($brokers as $brokerId)
+        {
+            $brokerInfo = $this->zk->get("/brokers/ids/$brokerId");
+            $parts = explode(":", $brokerInfo);
+            list($name, $host, $port) = $parts;
+            $this->brokerMapping[$brokerId] = array(
+                'name' => $name,
+                'host' => $host,
+                'port' => $port,
+            );
         }
     }
 
@@ -160,15 +251,14 @@ class ProducerConnector
     private function getProducerByBrokerId($brokerId)
     {
         if (!isset($this->producerList[$brokerId])) {
-            $brokerInfo = $this->zk->get("/brokers/ids/$brokerId");
-            $parts = explode(":", $brokerInfo);
-
-            // loose the first part
-            array_shift($parts);
-            list($host, $port) = $parts;
-
-            // instantiate the kafka broker representation
-            $kafka = new Kafka($host, $port);
+            if (!isset($this->brokerMapping[$brokerId]))
+            {
+                throw new \Kafka\Exception(
+                	"Broker connection paramters not initialized for broker $brokerId"
+                );
+            }
+            $broker = $this->brokerMapping[$brokerId];
+            $kafka = new Kafka($broker['host'], $broker['port']);
             $this->producerList[$brokerId] = $kafka->createProducer();
         }
 

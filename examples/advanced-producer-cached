@@ -1,0 +1,47 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Advanced producer with cached connector for heavy-weight php producers.
+ * 
+ *
+ *
+ * @author      Michal Harish <michal.harish@gmail.com>
+ * @date        2012-12-03
+ */
+
+// bootstrap
+require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+
+// get script parameters
+$connector = $argv[1];
+$topic = $argv[2];
+$payload = $argv[3];
+
+//cached connector logic starts here by allocating a tmp file
+$cacheFile = sys_get_temp_dir() . "/kafka-example-connector-cache";
+
+//if we don't have cached connector or the cache is older then 1 minute
+if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60)
+{
+    //create new connector and so redisover topics and brokers
+    $pc = new \Kafka\ProducerConnector($connector);
+
+    //and cache for another minute
+    $serializedPc = serialize($pc);
+    file_put_contents($cacheFile, $serializedPc);
+} else {
+    $serializedPc = file_get_contents($cacheFile);
+    $pc = unserialize($serializedPc);
+}
+
+// add the messages (randomly distrubuted to the different broker/partitions) and produce
+try {
+    $pc->addMessage($topic, $payload);
+    $pc->produce();
+} catch (\Kafka\Exception $e) {
+    /* What should happen here is to unlink the $cacheFile because 
+     * the failure may have been due to one of the brokers going down,
+     * and connector needs to be recreated to discover the new topology.
+     */
+}

@@ -1,0 +1,24 @@
+#!/usr/bin/php
+<?php 
+
+set_error_handler(function($errno,$errstr,$file,$line) {
+    throw new ErrorException($errstr,$errno,0,$file,$line);
+});
+
+echo "\nKafka-PHP Unit Tests\n====================\n";
+try {
+	foreach(glob(__DIR__. "/**/*.php") as $testCase)
+	{	
+		require $testCase;
+		echo "\033[1;37m" . substr($testCase,strlen(__DIR__)) . "\033[0m\n";
+	}
+	echo "\n\033[1;32mSUCCESS\033[0m";
+} catch(Exception $e) {
+	echo "\n\033[1;31m";
+	echo "FAILURE: " . $e->getMessage() . "\n";
+	echo $e->getTraceAsString ();
+	echo "\033[0m";
+}
+
+echo "\n\n";
+

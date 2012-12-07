@@ -84,6 +84,10 @@ Example Scripts
     ./examples/consumer-daemon {connector} {topic}
     ./examples/consumer-daemon hq-mharis-d01:2181 poker
 
+Unit Tests
+==========
+    Tests are just native php assert() calls included by the main runner:
+    $> ./test/run
 
 Backlog
 =======
@@ -95,12 +99,11 @@ Backlog
  * TODO - ProducerConnector zk watcher and rebalance
  * TODO - ProducerConnector extendible default partitioner
 
- * UNIT-TEST \Kafka\Offset
  * UNIT-TEST Kafka\Message create compare get attributes
  * UNIT-TEST V07 message set compression to the byte level 
  * UNIT-TEST Kafka\Exception\EndOfStream and that getWatermark doesn't advance
  * UNIT-TEST Send request produces exact byte sequences for all 4 types of requests
- * UNIT-TEST consumer offset advancs correctly to the byte level after nextMessage()
+ * UNIT-TEST consumer offset advances correctly to the byte level after nextMessage()
  * UNIT-TEST consumer offset doesn't advance nextMessage() returns null|false
  * UNIT-TEST consumer offset doesn't advance when exception is raised during nextMessage() 
 

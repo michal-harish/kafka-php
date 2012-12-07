@@ -6,9 +6,15 @@ set_error_handler(function($errno,$errstr,$file,$line) {
 });
 
 echo "\nKafka-PHP Unit Tests\n====================\n";
+
 try {
-	foreach(glob(__DIR__. "/**/*.php") as $testCase)
-	{	
+	foreach(
+	   array_merge(
+	       glob(__DIR__. "/tests/*/*.php"),
+	       glob(__DIR__. "/tests/*/*/*.php") 
+       ) as $testCase
+    )
+	{
 		require $testCase;
 		echo "\033[1;37m" . substr($testCase,strlen(__DIR__)) . "\033[0m\n";
 	}

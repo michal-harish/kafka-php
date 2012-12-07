@@ -87,33 +87,25 @@ Example Scripts
 Unit Tests
 ==========
     Tests are just native php assert() calls included by the main runner:
-    $> ./test/run
+    $> ./test
 
 Backlog
 =======
  * TODO - ConsumerConnector option for autooffset.reset
  * TODO - Abstract Consumer and Producer Connector so that both 0.7 and 0.8 discovery logic can be implemented transparently
+ * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
+
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
  * TODO - ConsumerConnector zk watcher and rebalance on nextMessage
  * TODO - ProducerConnector zk watcher and rebalance
  * TODO - ProducerConnector extendible default partitioner
-
- * UNIT-TEST Kafka\Message create compare get attributes
- * UNIT-TEST V07 message set compression to the byte level 
- * UNIT-TEST Kafka\Exception\EndOfStream and that getWatermark doesn't advance
- * UNIT-TEST Send request produces exact byte sequences for all 4 types of requests
- * UNIT-TEST consumer offset advances correctly to the byte level after nextMessage()
- * UNIT-TEST consumer offset doesn't advance nextMessage() returns null|false
- * UNIT-TEST consumer offset doesn't advance when exception is raised during nextMessage() 
-
+ * TODO - Snappy compression - could not compile snappy.so on 64-bit :(
  * TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood
  
  * TODO - profiling & optimization
     - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
     - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)
     - ProducerChannel - profile production (compression & serialization cost, )
- * TODO Snappy compression     
-    - could not compile snappy.so on 64-bit :(
- * TODO - implement the new versioned wire format 0.8 and acknowledgements 
-    - waiting for a stable 0.8 candidate
+ 
+ 

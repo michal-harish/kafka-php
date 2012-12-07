@@ -87,10 +87,10 @@ Example Scripts
 
 Backlog
 =======
+ * TODO - ConsumerConnector option for autooffset.reset
  * TODO - Abstract Consumer and Producer Connector so that both 0.7 and 0.8 discovery logic can be implemented transparently
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
- * TODO - ConsumerConnector option for autooffset.reset
  * TODO - ConsumerConnector zk watcher and rebalance on nextMessage
  * TODO - ProducerConnector zk watcher and rebalance
  * TODO - ProducerConnector extendible default partitioner

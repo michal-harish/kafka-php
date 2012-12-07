@@ -86,7 +86,7 @@ class MessageStream
         $this->topic        = $topic;
         $this->partition    = $partition;
         $this->maxFetchSize = $maxFetchSize;
-        $this->offset       = $this->getSmallestOffset();
+        $this->offset       = $this->getLargestOffset();
     }
 
     /**
@@ -138,7 +138,24 @@ class MessageStream
             $this->partition,
             \Kafka\Kafka::OFFSETS_EARLIEST
         );
+        return $offsets[0];
+    }
 
-        return new Offset($offsets[0]);
+    /**
+     * Get largest offset
+     *
+     * Method that will return the largets available offset in 
+     * the given partition.
+     *
+     * @return Offset
+     */
+    private function getLargestOffset()
+    {
+        $offsets = $this->consumer->offsets(
+            $this->topic,
+            $this->partition,
+            \Kafka\Kafka::OFFSETS_LATEST
+        );
+        return $offsets[0];
     }
 }

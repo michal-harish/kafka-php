@@ -33,7 +33,7 @@ abstract class Channel
      *
      * @var Resource
      */
-    private $socket = null;
+    protected $socket = null;
 
     /**
      * Socked send retry
@@ -43,7 +43,7 @@ abstract class Channel
      *
      * @var Integer
      */
-    private $socketSendRetry;
+    private $socketSendRetry = 1;
 
     /**
      * Rendable
@@ -140,7 +140,7 @@ abstract class Channel
      *
      * @return Resource $socket
      */
-    private function createSocket()
+    protected function createSocket()
     {
         if (!is_resource($this->socket)) {
             $this->socket = stream_socket_client(
@@ -228,10 +228,10 @@ abstract class Channel
             //flush remaining data
             $this->read($this->responseSize, $stream);
             $this->readable = false;
+            $remaining = $this->responseSize;
             $this->responseSize = null;
-
             throw new \Kafka\Exception\EndOfStream(
-                "Trying to read $size from $this->responseSize remaining."
+                "Trying to read $size from $remaining remaining."
             );
         }
 
@@ -259,7 +259,7 @@ abstract class Channel
                 }
             }
             $retrying = true;
-        }
+        }        
         return $result;
     }
 
@@ -303,9 +303,9 @@ abstract class Channel
                     "Could not read kafka response header."
                 );
             }
-
-            $this->responseSize = array_shift(unpack('N', $bytes32));
-            $errorCode = array_shift(unpack('n', $this->read(2)));
+            $this->responseSize = current(unpack('N', $bytes32));                        
+            $bytes16 = $this->read(2);
+            $errorCode = current(unpack('n', $bytes16));            
             if ($errorCode != 0) {
                 throw new \Kafka\Exception(
                     "Kafka response channel error code: $errorCode"
@@ -324,10 +324,7 @@ abstract class Channel
 
             return false;
         } else {
-            //TODO unit test readBytes do not get reset by any other method!
-            //to ensure consitent advancing of the offset
             $this->readBytes = 0;
-
             return true;
         }
     }
@@ -456,7 +453,7 @@ abstract class Channel
                 $payloadSize = $size - 5;
                 break;
             case \Kafka\Kafka::MAGIC_1:
-                $compression = array_shift(
+                $compression = current(
                     unpack('C', $this->read(1, $stream))
                 );
                 $payloadSize = $size - 6;
@@ -468,8 +465,7 @@ abstract class Channel
                 break;
         }
 
-        $crc32 = array_shift(unpack('N', $this->read(4, $stream)));
-
+        $crc32 = current(unpack('N', $this->read(4, $stream)));
         switch($compression) {
             default:
                 throw new \Kafka\Exception(
@@ -592,8 +588,8 @@ abstract class Channel
                         break;
                 }
 
-                $datacrc = array_shift(unpack("V", substr($gzFooter, 0, 4)));
-                $datasize = array_shift(unpack("V", substr($gzFooter, 4, 4)));
+                $datacrc = current(unpack("V", substr($gzFooter, 0, 4)));
+                $datasize = current(unpack("V", substr($gzFooter, 4, 4)));
                 rewind($payloadBuffer);
                 if (
                     $uncompressedSize != $datasize

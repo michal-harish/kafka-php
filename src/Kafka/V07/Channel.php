@@ -259,7 +259,7 @@ abstract class Channel
                 }
             }
             $retrying = true;
-        }
+        }        
         return $result;
     }
 
@@ -303,9 +303,9 @@ abstract class Channel
                     "Could not read kafka response header."
                 );
             }
-
-            $this->responseSize = current(unpack('N', $bytes32));                       
-            $errorCode = current(unpack('n', $this->read(2)));
+            $this->responseSize = current(unpack('N', $bytes32));                        
+            $bytes16 = $this->read(2);
+            $errorCode = current(unpack('n', $bytes16));            
             if ($errorCode != 0) {
                 throw new \Kafka\Exception(
                     "Kafka response channel error code: $errorCode"
@@ -324,10 +324,7 @@ abstract class Channel
 
             return false;
         } else {
-            //TODO unit test readBytes do not get reset by any other method!
-            //to ensure consitent advancing of the offset
             $this->readBytes = 0;
-
             return true;
         }
     }
@@ -456,7 +453,7 @@ abstract class Channel
                 $payloadSize = $size - 5;
                 break;
             case \Kafka\Kafka::MAGIC_1:
-                $compression = array_shift(
+                $compression = current(
                     unpack('C', $this->read(1, $stream))
                 );
                 $payloadSize = $size - 6;
@@ -468,8 +465,7 @@ abstract class Channel
                 break;
         }
 
-        $crc32 = array_shift(unpack('N', $this->read(4, $stream)));
-
+        $crc32 = current(unpack('N', $this->read(4, $stream)));
         switch($compression) {
             default:
                 throw new \Kafka\Exception(
@@ -592,8 +588,8 @@ abstract class Channel
                         break;
                 }
 
-                $datacrc = array_shift(unpack("V", substr($gzFooter, 0, 4)));
-                $datasize = array_shift(unpack("V", substr($gzFooter, 4, 4)));
+                $datacrc = current(unpack("V", substr($gzFooter, 0, 4)));
+                $datasize = current(unpack("V", substr($gzFooter, 4, 4)));
                 rewind($payloadBuffer);
                 if (
                     $uncompressedSize != $datasize

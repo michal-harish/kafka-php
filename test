@@ -5,6 +5,12 @@ set_error_handler(function($errno,$errstr,$file,$line) {
     throw new ErrorException($errstr,$errno,0,$file,$line);
 });
 
+function dump($data) {
+    for($i=0; $i<strlen($data); $i++) { 
+        echo 'chr('.ord($data[$i]).').';
+    }
+}
+
 echo "\nKafka-PHP Unit Tests\n====================\n";
 
 try {
@@ -18,12 +24,12 @@ try {
 	    $testName = substr($testCase,strlen(__DIR__)+1);
 	    echo "\033[1;37m{$testName}\033[0m";
 		require $testCase;
-		echo "\033[1;37m..SUCCESS\033[0m\n";
+		echo " - SUCCESS\n";
 	}
 	echo "\n\033[1;32mSUCCESS\033[0m";
 } catch(Exception $e) {
 	echo "\033[1;31m";
-	echo "..FAILURE: " . $e->getMessage() . "\n";
+	echo " - FAILURE: " . $e->getMessage() . "\n";
 	echo $e->getTraceAsString ();
 	echo "\033[0m";
 }

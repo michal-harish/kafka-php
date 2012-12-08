@@ -23,7 +23,6 @@ $offsetHex = NULL;
 
 // read optional arguments
 $args = array_slice($_SERVER['argv'], 1);
-
 while ($arg = array_shift($args)) {
     switch($arg) {
         case '--broker':
@@ -60,7 +59,7 @@ $consumer = $kafka->createConsumer();
 //offsets request
 while (true) {
 	try {
-		$offsets = $consumer->offsets($topic, $partition);
+		$offsets = $consumer->offsets($topic, $partition, \Kafka\Kafka::OFFSETS_EARLIEST);
 		break;
 	} catch (\Kafka\Exception $e) {
 		echo "\nFailed to read offsets from partition $topic:$partition " . $e->getMessage();
@@ -68,9 +67,12 @@ while (true) {
 	}
 }
 
-echo "\nOFFSETS REQUEST LATEST `$topic:$partition` = ". $offsets[0] . "\n";
-if ($offsetHex === NULL || $offsetHex > $offsets[0]) {
+
+if ($offsetHex === NULL || $offsetHex < $offsets[0]) {
     $offsetHex = $offsets[0];
+    echo "\nOFFSETS REQUEST EARLIEST `$topic:$partition` = ". $offsets[0] . "\n";
+} else {
+    echo "\nREADING FROM OFFSET `$topic:$partition` = ". $offsetHex . "\n";
 }
 
 //initialize watermark offset

@@ -50,6 +50,7 @@ $channel->send2($requestData, true); //expect response
 $data = $channel->getStreamContents();
 assert(strlen($data) === strlen($requestData) + 4);
 assert($data === chr(0).chr(0).chr(0).chr(strlen($requestData)).$requestData);
+
 //test error code in response throws exception
 try {
 	$channel->setStreamContents(
@@ -72,21 +73,6 @@ $channel->setStreamContents(
 );
 assert($channel->hasIncomingData2());
 assert($requestData === $channel->read2(strlen($requestData)));
-
-//throw new Exception("TODO test message set is compressed with inner messages to the byte level");
-
-//throw new Exception("TODO test loadMessage() can decompress message set correctly");
-
-
-/*
-for($i=0; $i<strlen($data); $i++)
-{
-	$ch = $data[$i];
-	echo 'chr('.ord($ch).').';
-}
-*/
-
-
 
 
 

@@ -33,7 +33,7 @@ abstract class Channel
      *
      * @var Resource
      */
-    private $socket = null;
+    protected $socket = null;
 
     /**
      * Socked send retry
@@ -43,7 +43,7 @@ abstract class Channel
      *
      * @var Integer
      */
-    private $socketSendRetry;
+    private $socketSendRetry = 1;
 
     /**
      * Rendable
@@ -140,7 +140,7 @@ abstract class Channel
      *
      * @return Resource $socket
      */
-    private function createSocket()
+    protected function createSocket()
     {
         if (!is_resource($this->socket)) {
             $this->socket = stream_socket_client(
@@ -228,10 +228,10 @@ abstract class Channel
             //flush remaining data
             $this->read($this->responseSize, $stream);
             $this->readable = false;
+            $remaining = $this->responseSize;
             $this->responseSize = null;
-
             throw new \Kafka\Exception\EndOfStream(
-                "Trying to read $size from $this->responseSize remaining."
+                "Trying to read $size from $remaining remaining."
             );
         }
 
@@ -304,8 +304,8 @@ abstract class Channel
                 );
             }
 
-            $this->responseSize = array_shift(unpack('N', $bytes32));
-            $errorCode = array_shift(unpack('n', $this->read(2)));
+            $this->responseSize = current(unpack('N', $bytes32));                       
+            $errorCode = current(unpack('n', $this->read(2)));
             if ($errorCode != 0) {
                 throw new \Kafka\Exception(
                     "Kafka response channel error code: $errorCode"

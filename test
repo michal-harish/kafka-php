@@ -15,13 +15,15 @@ try {
        ) as $testCase
     )
 	{
+	    $testName = substr($testCase,strlen(__DIR__)+1);
+	    echo "\033[1;37m{$testName}\033[0m";
 		require $testCase;
-		echo "\033[1;37m" . substr($testCase,strlen(__DIR__)) . "\033[0m\n";
+		echo "\033[1;37m..SUCCESS\033[0m\n";
 	}
 	echo "\n\033[1;32mSUCCESS\033[0m";
 } catch(Exception $e) {
-	echo "\n\033[1;31m";
-	echo "FAILURE: " . $e->getMessage() . "\n";
+	echo "\033[1;31m";
+	echo "..FAILURE: " . $e->getMessage() . "\n";
 	echo $e->getTraceAsString ();
 	echo "\033[0m";
 }

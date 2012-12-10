@@ -143,8 +143,53 @@ try {
 }
 
 
-//TODO test custom partitioner
+//test custom partitioner by date-as-day-of-week
+$producer1 = new TestV07ProducerChannel(new Kafka());
+$producer2 = new TestV07ProducerChannel(new Kafka());
+class TestDatePartitioner extends \Kafka\Partitioner {
+    public function partition($key, $numPartitions) {
+        $intKey = idate("w", strtotime($key));
+        return $intKey % $numPartitions;
+    }
+}
+$producerConnector = new TestV07ProducerConnector($producer1, $producer2,  \Kafka\Kafka::COMPRESSION_GZIP, new TestDatePartitioner());
+$producerConnector->addMessage("topic1", "hello 1", "2012-12-09"); // Sun -> 0 -> 0
+$producerConnector->addMessage("topic1", "hello 1", "2012-12-10"); // Mon -> 1 -> 1
+$producerConnector->addMessage("topic1", "hello 1", "2012-12-11"); // Tue -> 2 -> 2
+$producerConnector->addMessage("topic1", "hello 2", "2012-12-12"); // Wed -> 3 -> 3
+$producerConnector->addMessage("topic1", "hello 2", "2012-12-13"); // Thu -> 4 -> 4
+$producerConnector->addMessage("topic1", "hello 1", "2012-12-14"); // Fri -> 5 -> 0
+$producerConnector->addMessage("topic1", "hello 1", "2012-12-15"); // Sat -> 6 -> 1
+$p1t1q = $producer1->getMessageQueue();
+$p2t1q = $producer2->getMessageQueue();
+assert(count($p1t1q['topic1'][0]) === 2);
+assert(count($p1t1q['topic1'][1]) === 2);
+assert(count($p1t1q['topic1'][2]) === 1);
+assert(count($p2t1q['topic1'][0]) === 1);
+assert(count($p2t1q['topic1'][1]) === 1);
+foreach($p1t1q['topic1'] as $partition => $messages) {
+    foreach($messages as $message) {
+        assert($message instanceof \Kafka\Message);
+        assert($message->partition() == $partition);
+        assert($message->payload() === 'hello 1');
+        assert($message->compression() == \Kafka\Kafka::COMPRESSION_GZIP);
+    }
+}
+foreach($p2t1q['topic1'] as $partition => $messages) {
+    foreach($messages as $message) {
+        assert($message instanceof \Kafka\Message);
+        assert($message->partition() == $partition);
+        assert($message->payload() === 'hello 2');
+        assert($message->compression() == \Kafka\Kafka::COMPRESSION_GZIP);
+    }
+}
 
 //TODO test md5 partition unifority of distribution
-
+/*
+mod=0
+for(i=0;i<32;i++)
+{
+    digit=md5[i]; //I presume you can convert chart to digit yourself.
+    mod=(mod*16+digit) % divider;
+}*/
 

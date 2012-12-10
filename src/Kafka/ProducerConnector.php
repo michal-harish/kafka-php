@@ -49,7 +49,7 @@ class ProducerConnector
      *
      * @var Array
      */
-    private $topicPartitionMapping;
+    protected $topicPartitionMapping;
 
 
     /**
@@ -69,7 +69,17 @@ class ProducerConnector
      *     )
      * @var Array
      */
-    private $brokerMapping;
+    protected $brokerMapping;
+
+    /**
+     * @var int
+     */
+    protected $compression;
+
+    /**
+     * @var Partitioner
+     */
+    protected $partitioner;
 
     /**
      * Zookeeper Connection
@@ -86,14 +96,28 @@ class ProducerConnector
      *
      * @var Array of IProducer
      */
-    private $producerList;
+    protected $producerList;
 
     /**
-     * Construct
+     * @param String $zkConnect
+     * @param Integer $compression$compression 
+     * @param Partitioner|NULL $partitioner 
      */
-    public function __construct($zkConnect)
+    public function __construct(
+        $zkConnect, 
+        $compression = \Kafka\Kafka::COMPRESSION_NONE, 
+        Partitioner $partitioner = null
+    )
     {
         $this->zkConnect = $zkConnect;
+        $this->compression = $compression;
+        if ($partitioner === null) {
+            $partitioner = new Partitioner();
+        } elseif (!$partitioner instanceof Partitioner) {
+            throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
+        }
+        $this->partitioner = $partitioner;
+
         $this->discoverTopics();
         $this->discoverBrokers();
     }
@@ -149,7 +173,7 @@ class ProducerConnector
             $topicBrokers = $this->zk->getChildren("/brokers/topics/$topic");
             foreach ($topicBrokers as $brokerId) {
                 // get the number of partitions
-                $partitionCount = $this->zk->get(
+                $partitionCount = (int) $this->zk->get(
                     "/brokers/topics/$topic/$brokerId"
                 );
                 for ($p = 0; $p < $partitionCount; $p++) {
@@ -194,12 +218,12 @@ class ProducerConnector
      *
      * @param String $topic
      * @param String $payload
-     * @param Integer $compression
+     * @param Partitioner|NULL $partitioner
      */
     public function addMessage(
         $topic,
         $payload,
-        $compression = \Kafka\Kafka::COMPRESSION_NONE
+        $key = null
     )
     {
         if (!array_key_exists($topic,$this->topicPartitionMapping))
@@ -208,15 +232,17 @@ class ProducerConnector
                 "Unknown Kafka topic `$topic`"
             );
         }
-        // random paritioner hardcode for now
-        // TODO create Partitioner class and \Kafka\Partitioner
 
-        // randomly get which partition we will use
-        $i = rand(0, count($this->topicPartitionMapping[$topic]) - 1);
-
-        // get partition information
+        //invoke partitioner
+        $numPartitions = count($this->topicPartitionMapping[$topic]);
+        $i = $this->partitioner->partition($key, $numPartitions);
+        if (!is_integer($i) || $i<0 || $i>$numPartitions-1) 
+        {
+            throw new \Kafka\Exception(
+                "Partitioner must return 0 <= integer < $numPartitions, returned $i"
+            );
+        }
         $partitionInfo = $this->topicPartitionMapping[$topic][$i];
-
         $brokerId  = $partitionInfo['broker'];
         $partition = $partitionInfo['partition'];
 
@@ -225,7 +251,7 @@ class ProducerConnector
             $topic,
             $partition,
             $payload,
-            $compression
+            $this->compression
         );
 
         // get the actual producer we will add the mesasge

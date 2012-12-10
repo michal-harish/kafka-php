@@ -53,7 +53,7 @@ class ConsumerConnector
         $messageStreams = array();
 
         foreach ($topicBrokers as $brokerId) {
-            $partitionCount = $this->zk->get(
+            $partitionCount = (int) $this->zk->get(
                 "/brokers/topics/$topic/$brokerId"
             );
 

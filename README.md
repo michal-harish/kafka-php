@@ -99,7 +99,6 @@ Backlog
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
  * TODO - ConsumerConnector zk watcher and rebalance on nextMessage
  * TODO - ProducerConnector zk watcher and rebalance
- * TODO - ProducerConnector extendible default partitioner
  * TODO - Snappy compression - could not compile snappy.so on 64-bit :(
  * TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood
  

@@ -26,7 +26,7 @@ class ProducerChannel
      *
      * @var Array
      */
-    private $messageQueue;
+    protected $messageQueue;
 
     /**
      * Constructor

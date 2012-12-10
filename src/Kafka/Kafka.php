@@ -20,6 +20,7 @@ require_once "IConsumer.php";
 require_once "ConsumerConnector.php";
 require_once "ProducerConnector.php";
 require_once "MessageStream.php";
+require_once "Partitioner.php";
 
 class Kafka
 {

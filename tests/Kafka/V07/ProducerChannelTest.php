@@ -8,10 +8,14 @@ use Kafka\Message;
 
 class TestV07ProducerChannel extends \Kafka\V07\ProducerChannel {
 	public function getStreamContents() {
-		rewind($this->socket); return stream_get_contents($this->socket);
+	    $this->createSocket();
+	    rewind($this->socket); return stream_get_contents($this->socket);
 	}
 	protected function createSocket() {
 		if (!is_resource($this->socket)) $this->socket = fopen("php://memory", "rw");
+	}
+	public function getMessageQueue() {
+	    return $this->messageQueue;
 	}
 }
 

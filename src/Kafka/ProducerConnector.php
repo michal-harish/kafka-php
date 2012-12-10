@@ -49,7 +49,7 @@ class ProducerConnector
      *
      * @var Array
      */
-    private $topicPartitionMapping;
+    protected $topicPartitionMapping;
 
 
     /**
@@ -69,17 +69,17 @@ class ProducerConnector
      *     )
      * @var Array
      */
-    private $brokerMapping;
+    protected $brokerMapping;
 
     /**
      * @var int
      */
-    private $compression;
+    protected $compression;
 
     /**
      * @var Partitioner
      */
-    private $partitioner;
+    protected $partitioner;
 
     /**
      * Zookeeper Connection
@@ -96,7 +96,7 @@ class ProducerConnector
      *
      * @var Array of IProducer
      */
-    private $producerList;
+    protected $producerList;
 
     /**
      * @param String $zkConnect

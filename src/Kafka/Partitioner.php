@@ -22,16 +22,14 @@ class Partitioner
     public function partition($key, $numPartitions)
     {
         if ($key === null) {
-            $result = rand(0, $numPartitions-1);
-            return $result;
+            return rand(0, $numPartitions-1);
         } else {
             if (!is_integer($key)) {
                 throw new \Kafka\Exception(
                     'Default Kafka Partitioner only accepts integer keys'
                 );
             }
-            $result = $key % $numPartitions;
-            return $result;
+            return $key % $numPartitions;
         }
     }
 }

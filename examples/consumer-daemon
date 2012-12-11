@@ -15,10 +15,10 @@ require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 
 // get script parameters
 $connector = $argv[1];
-$topic = $argv[2];
+$topicFilter = new \Kafka\Whitelist($argv[2]);
 
 $consumerConnector = new \Kafka\ConsumerConnector($connector);
-$messageStreams = $consumerConnector->createMessageStreams($topic, 65535 * 10);
+$messageStreams = $consumerConnector->createMessageStreamsByFilter($topicFilter, 65535 * 10);
 
 while (true) {
     $fetchCount = 0;
@@ -26,7 +26,8 @@ while (true) {
     foreach ($messageStreams as $mid => $messageStream) {
         // keep getting messages, if we have more
         while ($message = $messageStream->nextMessage()) {
-            // just print
+            // just print topic and payload
+            echo "TOPIC=".$message->topic(). " PAYLOAD=";
             var_dump($message->payload());
             echo "\n";
         }

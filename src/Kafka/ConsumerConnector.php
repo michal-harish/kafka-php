@@ -39,6 +39,27 @@ class ConsumerConnector
     }
 
     /**
+     * Create message streams by a given TopicFilter (either Whitelist or Blacklist)
+     * with a given fetch size applied to each.
+     * 
+     * @param TopicFilter $filter
+     * @param Integer $maxFetchSize
+     * @return Array Array containing the list of consumer streams
+     */
+    public function createMessageStreamsByFilter(TopicFilter $filter, $maxFetchSize = 1000)
+    {
+        $topics = $filter->getTopics($this->zk->getChildren("/brokers/topics"));
+        $messageStreams = array();
+        foreach($topics as $topic) {
+            $topicMessageStreams = $this->createMessageStreams($topic, $maxFetchSize);
+            foreach($topicMessageStreams as $messageStream) {
+                $messageStreams[] = $messageStream;
+            }
+        }
+        return $messageStreams;
+    }
+
+    /**
      * Create message streams
      *
      * @param String $topic

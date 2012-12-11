@@ -91,8 +91,7 @@ Unit Tests
 
 Backlog
 =======
- * TODO - ConsumerConnector option for autooffset.reset
- * TODO - TopicFilter for ConsumerConnector 
+ * TODO - ConsumerConnector option for autooffset.reset (there are various opinions about this)
  * TODO - Abstract Consumer and Producer Connector so that both 0.7 and 0.8 discovery logic can be implemented transparently
  * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
 

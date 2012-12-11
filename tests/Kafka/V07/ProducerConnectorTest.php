@@ -184,12 +184,4 @@ foreach($p2t1q['topic1'] as $partition => $messages) {
     }
 }
 
-//TODO test md5 partition unifority of distribution
-/*
-mod=0
-for(i=0;i<32;i++)
-{
-    digit=md5[i]; //I presume you can convert chart to digit yourself.
-    mod=(mod*16+digit) % divider;
-}*/
 

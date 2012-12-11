@@ -17,6 +17,7 @@ require_once "Offset.php";
 require_once "Message.php";
 require_once "IProducer.php";
 require_once "IConsumer.php";
+require_once "TopicFilter.php";
 require_once "ConsumerConnector.php";
 require_once "ProducerConnector.php";
 require_once "MessageStream.php";

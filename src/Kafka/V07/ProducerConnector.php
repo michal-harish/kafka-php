@@ -22,25 +22,31 @@ class ProducerConnector extends \Kafka\ProducerConnector
     private $zk;
 
     /**
+    * BrokerId - broker connector mapping
+    *
+    * Mapping that contains only connection argument for individual brokers,
+    * but not actual socket handle.
+    *
+    * @format
+    *     array(
+    *         [brokerId] => array (
+    *           "name" => "{kafkaname}",
+    *           "host" => "{host}",
+    *           "port" => "{port}",
+    *         ),
+    *         ...
+    *     )
+    * @var Array
+    */
+    private $brokerMapping;
+
+
+    /**
      * @param String $zkConnect
-     * @param Integer $compression$compression
-     * @param Partitioner|NULL $partitioner
      */
-    protected function __construct(
-        $zkConnect,
-        $compression = \Kafka\Kafka::COMPRESSION_NONE,
-        \Kafka\Partitioner $partitioner = null
-    )
+    protected function __construct($zkConnect)
     {
         $this->zkConnect = $zkConnect;
-        $this->compression = $compression;
-        if ($partitioner === null) {
-            $partitioner = new \Kafka\Partitioner();
-        } elseif (!$partitioner instanceof \Kafka\Partitioner) {
-            throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
-        }
-        $this->partitioner = $partitioner;
-
         $this->discoverTopics();
         $this->discoverBrokers();
     }
@@ -53,17 +59,7 @@ class ProducerConnector extends \Kafka\ProducerConnector
      */
     public function __sleep()
     {
-        return array('topicPartitionMapping', 'brokerMapping', 'partitioner', 'zkConnect');
-    }
-
-    /**
-     * When waking up cached connector, we need to reset the handles so they
-     * are initialized when required.
-     */
-    public function __wakeup()
-    {
-        $this->zk = null;
-        $this->producerList = array();
+        return parent::__sleep() + array('zkConnect', 'brokerMapping');
     }
 
     /**

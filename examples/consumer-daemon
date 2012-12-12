@@ -18,18 +18,19 @@ $connector = $argv[1];
 $topicFilter = new \Kafka\Whitelist($argv[2]);
 
 $consumerConnector = new \Kafka\ConsumerConnector($connector);
-$messageStreams = $consumerConnector->createMessageStreamsByFilter($topicFilter, 65535 * 10);
+$messageStreams = $consumerConnector->createMessageStreamsByFilter($topicFilter, 65535);
 
+$count = 0;
 while (true) {
     $fetchCount = 0;
 
     foreach ($messageStreams as $mid => $messageStream) {
         // keep getting messages, if we have more
         while ($message = $messageStream->nextMessage()) {
+            $count++;
             // just print topic and payload
-            echo "TOPIC=".$message->topic(). " PAYLOAD=";
+            echo "{$count}. TOPIC=".$message->topic(). " PAYLOAD=";
             var_dump($message->payload());
-            echo "\n";
         }
     }
 

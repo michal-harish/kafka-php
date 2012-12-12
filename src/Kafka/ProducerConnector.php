@@ -21,6 +21,7 @@ namespace Kafka;
 
 abstract class ProducerConnector
 {
+
     public static function Create(
         $connectionString,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
@@ -30,7 +31,15 @@ abstract class ProducerConnector
         $apiImplementation = Kafka::getApiImplementation($apiVersion);
         include_once "{$apiImplementation}/ProducerConnector.php";
         $connectorClass = "\\Kafka\\{$apiImplementation}\\ProducerConnector";
-        return new $connectorClass($connectionString, $compression, $partitioner);
+        $connector = new $connectorClass($connectionString);
+        $connector->compression = $compression;
+        if ($partitioner === null) {
+            $partitioner = new \Kafka\Partitioner();
+        } elseif (!$partitioner instanceof \Kafka\Partitioner) {
+            throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
+        }
+        $connector->partitioner = $partitioner;
+        return $connector;
 
     }
 
@@ -47,14 +56,19 @@ abstract class ProducerConnector
         if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60)
         {
             //create new connector and so redisover topics and brokers
-            $connector = \Kafka\ProducerConnector::Create(
-                $connectionString, $compression, $partitioner, $apiVersion
-            );
+            $connector = \Kafka\ProducerConnector::Create($connectionString);
             //and cache for another minute
             file_put_contents($cacheFile, serialize($connector));
         } else {
             $connector = unserialize(file_get_contents($cacheFile));
         }
+        $connector->compression = $compression;
+        if ($partitioner === null) {
+            $partitioner = new \Kafka\Partitioner();
+        } elseif (!$partitioner instanceof \Kafka\Partitioner) {
+            throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
+        }
+        $connector->partitioner = $partitioner;
         return $connector;
     }
 
@@ -80,26 +94,6 @@ abstract class ProducerConnector
      * @var Array
      */
     protected $topicPartitionMapping;
-
-
-    /**
-     * BrokerId - broker connector mapping
-     * 
-     * Mapping that contains only connection argument for individual brokers, 
-     * but not actual socket handle.
-     * 
-     * @format
-     *     array(
-     *         [brokerId] => array (
-     *           "name" => "{kafkaname}",
-     *           "host" => "{host}",
-     *           "port" => "{port}",
-     *         ),
-     *         ...
-     *     )
-     * @var Array
-     */
-    private $brokerMapping;
 
     /**
      * @var int
@@ -132,7 +126,7 @@ abstract class ProducerConnector
      * @param String $payload
      * @param Partitioner|NULL $partitioner
      */
-    public function addMessage(
+    final public function addMessage(
         $topic,
         $payload,
         $key = null
@@ -182,7 +176,7 @@ abstract class ProducerConnector
      *
      * This method will actually produce the reall messages to Kafka.
      */
-    public function produce()
+    final public function produce()
     {
         foreach ($this->producerList as $producer) {
             $producer->produce();
@@ -192,13 +186,44 @@ abstract class ProducerConnector
     /**
      * @return array of topic names
      */
-    public function getAvailableTopics() {
+    final public function getAvailableTopics() {
         $result = array();
         foreach($this->topicPartitionMapping as $topic=>$partitions) {
             $result[] = "{$topic} [" . count($partitions). "]";
         }
         return $result;
     }
+
+    /**
+     * When waking up cached connector, we need to reset the handles so they
+     * are initialized when required.
+     */
+    final public function __wakeup()
+    {
+        $this->producerList = array();
+    }
+
+    /**
+     *
+     * This method should be overriden by implementation class, e.g. in 0.7:
+     * public function __sleep()
+     * {
+     *    return parent::__sleep() + array('zkConnect', 'brokerMapping');
+     * }
+     *
+     * @return multitype:string
+     */
+    public function __sleep() {
+        return array('topicPartitionMapping');
+    }
+
+    /**
+     * Abstract constructor tales a connectionString which can
+     * be zk.connect string or list of brokers or other metadata provider.
+     * 
+     * @param String $connectionString
+     */
+    abstract protected function __construct($connectionString);
 
     /**
      * Get producer by broker id
@@ -209,9 +234,5 @@ abstract class ProducerConnector
      * @return IProducer
      */
     abstract protected function getProducerByBrokerId($brokerId);
-
-    abstract public function __sleep();
-
-    abstract public function __wakeup();
 
 }

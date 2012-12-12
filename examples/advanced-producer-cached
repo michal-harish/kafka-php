@@ -9,6 +9,7 @@
  * @author      Michal Harish <michal.harish@gmail.com>
  * @date        2012-12-03
  */
+$t = microtime(true);
 
 // bootstrap
 require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
@@ -34,13 +35,14 @@ if (count($argv) == 3)  {
 }
 for($i=3; $i<count($argv); $i++) {
     $payload = $argv[$i];
-    try {
-        $pc->addMessage($topic, $payload);
-        $pc->produce();
-    } catch (\Kafka\Exception $e) {
-        /* What should happen here is to unlink the $cacheFile because 
-         * the failure may have been due to one of the brokers going down,
-         * and connector needs to be recreated to discover the new topology.
-         */
-    }
+    $pc->addMessage($topic, $payload);
+}
+try {
+    $pc->produce();
+    echo "Produced ". ($i-3 ). " messages in ". (microtime(true) - $t) . " sedonds\n";
+} catch (\Kafka\Exception $e) {
+    /* What should happen here is to unlink the $cacheFile because 
+     * the failure may have been due to one of the brokers going down,
+     * and connector needs to be recreated to discover the new topology.
+     */
 }

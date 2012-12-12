@@ -17,7 +17,7 @@ require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 $connector = $argv[1];
 $topicFilter = new \Kafka\Whitelist($argv[2]);
 
-$consumerConnector = new \Kafka\ConsumerConnector($connector);
+$consumerConnector = \Kafka\ConsumerConnector::Create($connector);
 $messageStreams = $consumerConnector->createMessageStreamsByFilter($topicFilter, 65535);
 
 $count = 0;

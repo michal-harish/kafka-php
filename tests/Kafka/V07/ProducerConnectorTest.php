@@ -1,21 +1,21 @@
 <?php 
 
 require_once __DIR__ . "/../../../src/Kafka/Kafka.php";
-require_once __DIR__ . "/../../../src/Kafka/V07/ProducerConnector.php";
 
 use Kafka\Kafka;
 use Kafka\Message;
 
-class TestV07ProducerConnector extends \Kafka\V07\ProducerConnector {
+class TestV07ProducerConnector extends \Kafka\ProducerConnector {
 
     public function __construct(
         TestV07ProducerChannel $producer1, 
         TestV07ProducerChannel $producer2,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
-        $partitioner = null) {
+        $partitioner = null
+    ) {
         $this->partitioner = $partitioner === null ? new \Kafka\Partitioner() : $partitioner;
         $this->compression = $compression;
-        $this->topicPartitionMapping = array(
+        $this->topicMetadata = array(
             'topic1' => array(
                 0 => array(
                     'broker' => 1,
@@ -39,7 +39,7 @@ class TestV07ProducerConnector extends \Kafka\V07\ProducerConnector {
                 ),
             )
         );
-        $this->brokerMapping = array(
+        $this->brokerMetadata = array(
             1 => array( 
             	'name' => 'abc-1353063353941',
                 'host' => 'somehost-a',

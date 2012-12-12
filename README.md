@@ -94,7 +94,6 @@ Unit Tests
 
 Backlog
 =======
- * TODO - ConsumerConnector Facade so that both 0.7 and 0.8 can be implemented transparently
  * TODO - ConsumerConnector option for autooffset.reset (there are various opinions about this)
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...

@@ -17,4 +17,8 @@ interface IMetadata
      */
     function getBrokerInfo($brokerId);
 
+    /**
+     * @return array[<brokerId>] => array('name'=> ..., 'host'=>..., 'port' =>... )
+     */
+    function getBrokerMetadata();
 }

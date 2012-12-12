@@ -78,4 +78,17 @@ class Metadata implements \Kafka\IMetadata
         );
     }
 
+    public function getBrokerMetadata()
+    {
+        $this->zkConnect();
+        $brokerMetadata = array();
+        $brokers = $this->zk->getChildren("/brokers/ids");
+        foreach($brokers as $brokerId)
+        {
+            $brokerMetadata[$brokerId] = $this->getBrokerInfo($brokerId);
+        }
+        return $brokerMetadata;
+    }
+
+
 }

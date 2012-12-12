@@ -19,19 +19,25 @@
 
 namespace Kafka;
 
-abstract class ProducerConnector
+class ProducerConnector
 {
 
+    /** 
+     * \Kafka\ProducerConnect::Create(...)
+     * 
+     * @param unknown_type $connectionString
+     * @param unknown_type $compression
+     * @param Partitioner $partitioner
+     * @param unknown_type $apiVersion
+     * @throws \Kafka\Exception
+     */
     public static function Create(
         $connectionString,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
         Partitioner $partitioner = null,
         $apiVersion = 0.7
     ) {
-        $apiImplementation = Kafka::getApiImplementation($apiVersion);
-        include_once "{$apiImplementation}/ProducerConnector.php";
-        $connectorClass = "\\Kafka\\{$apiImplementation}\\ProducerConnector";
-        $connector = new $connectorClass($connectionString);
+        $connector = new ProducerConnector($connectionString, $apiVersion);
         $connector->compression = $compression;
         if ($partitioner === null) {
             $partitioner = new \Kafka\Partitioner();
@@ -43,15 +49,21 @@ abstract class ProducerConnector
 
     }
 
+    /**
+     * \Kafka\ProducerConnect::CreateCached(...)
+     * 
+     * @param unknown_type $connectionString
+     * @param unknown_type $compression
+     * @param Partitioner $partitioner
+     * @param unknown_type $apiVersion
+     * @throws \Kafka\Exception
+     */
     public static function CreateCached(
         $connectionString,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
         Partitioner $partitioner = null,
         $apiVersion = 0.7
     ) {
-        $apiImplementation = Kafka::getApiImplementation($apiVersion);
-        include_once "{$apiImplementation}/ProducerConnector.php";
-
         $cacheFile = sys_get_temp_dir() . "/kafka-connector-{$apiVersion}-" . md5(serialize($connectionString));
         if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60)
         {
@@ -71,6 +83,32 @@ abstract class ProducerConnector
         $connector->partitioner = $partitioner;
         return $connector;
     }
+
+    private $connectionString;
+    private $apiVersion;
+    /**
+    * @var \Kafka\IMetadata
+    */
+    private $metadata;
+
+    /**
+     * BrokerId - broker connector mapping
+     *
+     * Mapping that contains only connection argument for individual brokers,
+     * but not actual socket handle.
+     *
+     * @format
+     *     array(
+     *         [brokerId] => array (
+     *           "name" => "{kafkaname}",
+     *           "host" => "{host}",
+     *           "port" => "{port}",
+     *         ),
+     *         ...
+     *     )
+     * @var Array
+     */
+    protected $brokerMetadata;
 
     /**
      * Topic to broker mapping
@@ -93,7 +131,7 @@ abstract class ProducerConnector
      *
      * @var Array
      */
-    protected $topicPartitionMapping;
+    protected $topicMetadata;
 
     /**
      * @var int
@@ -113,7 +151,25 @@ abstract class ProducerConnector
      *
      * @var Array of IProducer
      */
-    private $producerList;
+    protected $producerList;
+
+    protected function __construct($connectionString, $apiVersion)
+    {
+        $this->connectionString = $connectionString;
+        $this->apiVersion = $apiVersion;
+        $this->refreshMetadata();
+    }
+
+    private function refreshMetadata() {
+        if ($this->metadata == null) {
+            $apiImplementation = Kafka::getApiImplementation($this->apiVersion);
+            include_once "{$apiImplementation}/Metadata.php";
+            $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
+            $this->metadata = new $metadataClass($this->connectionString);
+        }
+        $this->brokerMetadata = $this->metadata->getBrokerMetadata();
+        $this->topicMetadata = $this->metadata->getTopicMetadata();
+    }
 
     /**
      * Add message
@@ -132,7 +188,7 @@ abstract class ProducerConnector
         $key = null
     )
     {
-        if (!array_key_exists($topic,$this->topicPartitionMapping))
+        if (!array_key_exists($topic,$this->topicMetadata))
         {
             throw new \Kafka\Exception(
                 "Unknown Kafka topic `$topic`"
@@ -140,7 +196,8 @@ abstract class ProducerConnector
         }
 
         //invoke partitioner
-        $numPartitions = count($this->topicPartitionMapping[$topic]);
+        $numPartitions = count($this->topicMetadata[$topic]);
+
         $i = $this->partitioner->partition($key, $numPartitions);
         if (!is_integer($i) || $i<0 || $i>$numPartitions-1) 
         {
@@ -148,7 +205,7 @@ abstract class ProducerConnector
                 "Partitioner must return 0 <= integer < $numPartitions, returned $i"
             );
         }
-        $partitionInfo = $this->topicPartitionMapping[$topic][$i];
+        $partitionInfo = $this->topicMetadata[$topic][$i];
         $brokerId  = $partitionInfo['broker'];
         $partition = $partitionInfo['partition'];
 
@@ -188,7 +245,7 @@ abstract class ProducerConnector
      */
     final public function getAvailableTopics() {
         $result = array();
-        foreach($this->topicPartitionMapping as $topic=>$partitions) {
+        foreach($this->topicMetadata as $topic=>$partitions) {
             $result[] = "{$topic} [" . count($partitions). "]";
         }
         return $result;
@@ -204,26 +261,12 @@ abstract class ProducerConnector
     }
 
     /**
-     *
-     * This method should be overriden by implementation class, e.g. in 0.7:
-     * public function __sleep()
-     * {
-     *    return parent::__sleep() + array('zkConnect', 'brokerMapping');
-     * }
-     *
      * @return multitype:string
      */
-    public function __sleep() {
-        return array('topicPartitionMapping');
+    final public function __sleep() {
+        return array('topicMetadata','connectionString','apiVersion', 'brokerMetadata');
     }
 
-    /**
-     * Abstract constructor tales a connectionString which can
-     * be zk.connect string or list of brokers or other metadata provider.
-     * 
-     * @param String $connectionString
-     */
-    abstract protected function __construct($connectionString);
 
     /**
      * Get producer by broker id
@@ -233,6 +276,20 @@ abstract class ProducerConnector
      *
      * @return IProducer
      */
-    abstract protected function getProducerByBrokerId($brokerId);
+    protected function getProducerByBrokerId($brokerId)
+    {
+        if (!isset($this->producerList[$brokerId])) {
+            if (!isset($this->brokerMetadata[$brokerId]))
+            {
+                throw new \Kafka\Exception(
+                	"Broker connection paramters not initialized for broker $brokerId"
+                );
+            }
+            $broker = $this->brokerMetadata[$brokerId];
+            $kafka = new Kafka($broker['host'], $broker['port']);
+            $this->producerList[$brokerId] = $kafka->createProducer();
+        }
+        return $this->producerList[$brokerId];
+    }
 
 }

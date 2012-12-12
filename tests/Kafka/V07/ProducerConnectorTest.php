@@ -1,11 +1,12 @@
 <?php 
 
 require_once __DIR__ . "/../../../src/Kafka/Kafka.php";
+require_once __DIR__ . "/../../../src/Kafka/V07/ProducerConnector.php";
 
 use Kafka\Kafka;
 use Kafka\Message;
 
-class TestV07ProducerConnector extends \Kafka\ProducerConnector {
+class TestV07ProducerConnector extends \Kafka\V07\ProducerConnector {
 
     public function __construct(
         TestV07ProducerChannel $producer1, 
@@ -184,4 +185,6 @@ foreach($p2t1q['topic1'] as $partition => $messages) {
     }
 }
 
+
+//TODO test cached connector
 

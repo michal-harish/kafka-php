@@ -76,7 +76,10 @@ Example Scripts
     ./examples/simple-consumer test-topic --broker hq-mharis-d01:9092 --offset 0
 
     ./examples/advanced-producer {connector} {topic} {message}
-    ./examples/advanced-producer hq-mharis-d01:2181 test "Message 1"
+
+    ./examples/advanced-producer-cached {connector} {topic} {message}
+
+    ./examples/advanced-producer-partitioner {connector} {topic} {message}
 
     ./examples/advanced-consumer {connector} {topic}
     ./examples/advanced-consumer hq-mharis-d01:2181 test
@@ -91,14 +94,14 @@ Unit Tests
 
 Backlog
 =======
+ * TODO - ConsumerConnector Facade so that both 0.7 and 0.8 can be implemented transparently
  * TODO - ConsumerConnector option for autooffset.reset (there are various opinions about this)
- * TODO - Abstract Consumer and Producer Connector so that both 0.7 and 0.8 discovery logic can be implemented transparently
- * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
-
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
  * TODO - ConsumerConnector zk watcher and rebalance on nextMessage
  * TODO - ProducerConnector zk watcher and rebalance
+ * TODO - ConsumerConnector zk watcher and rebalance
+ * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
  * TODO - Snappy compression - could not compile snappy.so on 64-bit :(
  * TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood
  

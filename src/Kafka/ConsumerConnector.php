@@ -11,14 +11,12 @@
 
 namespace Kafka;
 
-class ConsumerConnector
+final class ConsumerConnector
 {
     /**
-     * Zookeeper Connection
-     *
-     * @var Zookeeper
+     * @var \Kafka\IMetadata 
      */
-    private $zk;
+    private $metadata;
 
     /**
      * Kafka Broker list
@@ -28,14 +26,27 @@ class ConsumerConnector
      *
      * @var Array
      */
-    private $kafkaBrokerList;
+    private $brokerList;
 
     /**
-     * Construct
+     * @var array[<topic>][<virtual_partition>]
      */
-    public function __construct($zkConnect)
-    {
-        $this->zk = new \Zookeeper($zkConnect);
+    private $topicMetadata = array();
+
+    public static function Create(
+        $connectionString,
+        $apiVersion = 0.7
+    ) {
+        $apiImplementation = Kafka::getApiImplementation($apiVersion);
+        include_once "{$apiImplementation}/Metadata.php";
+        $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
+        $connector = new ConsumerConnector(new $metadataClass($connectionString));
+        return $connector;
+    }
+
+    protected function __construct(IMetadata $metadata) {
+        $this->metadata = $metadata;
+        $this->topicMetadata = $this->metadata->getTopicMetadata();
     }
 
     /**
@@ -48,9 +59,8 @@ class ConsumerConnector
      */
     public function createMessageStreamsByFilter(TopicFilter $filter, $maxFetchSize = 1000)
     {
-        $topics = $filter->getTopics($this->zk->getChildren("/brokers/topics"));
         $messageStreams = array();
-        foreach($topics as $topic) {
+        foreach($filter->getTopics(array_keys($this->topicMetadata)) as $topic) {
             $topicMessageStreams = $this->createMessageStreams($topic, $maxFetchSize);
             foreach($topicMessageStreams as $messageStream) {
                 $messageStreams[] = $messageStream;
@@ -69,25 +79,19 @@ class ConsumerConnector
      */
     public function createMessageStreams($topic, $maxFetchSize = 1000)
     {
-        $topicBrokers = $this->zk->getChildren("/brokers/topics/$topic");
-
+        if (!isset($this->topicMetadata[$topic])) {
+            throw new \Kafka\Exception("Unknown topic `{$topic}`");
+        }
         $messageStreams = array();
-
-        foreach ($topicBrokers as $brokerId) {
-            $partitionCount = (int) $this->zk->get(
-                "/brokers/topics/$topic/$brokerId"
+        foreach ($this->topicMetadata[$topic] as $virtualPartition) {
+            $broker = $this->getKafkaByBrokerId($virtualPartition['broker']);
+            $partition = $virtualPartition['partition'];
+            $messageStreams[] = new MessageStream(
+                $broker,
+                $topic,
+                $partition,
+                $maxFetchSize
             );
-
-            $kafka = $this->getKafkaByBrokerId($brokerId);
-
-            for ($partition = 0; $partition < $partitionCount; $partition++) {
-                $messageStreams[] = new MessageStream(
-                    $kafka,
-                    $topic,
-                    $partition,
-                    $maxFetchSize
-                );
-            }
         }
 
         return $messageStreams;
@@ -104,24 +108,15 @@ class ConsumerConnector
     {
         // check if it exists, and if it doesn't, create it
         if (!isset($this->brokerList[$brokerId])) {
-            // will return something like:
-            // {something}-{numbers_that_looks_like_timestamp}:{host}:{port}
-            $tmp = $this->zk->get("/brokers/ids/$brokerId");
-
-            $parts = explode(":", $tmp);
-
-            // loose the first part
-            array_shift($parts);
-
-            list($host, $port) = $parts;
+            $broker = $this->metadata->getBrokerInfo($brokerId);
 
             // instantiate the kafka broker representation
-            $kafka = new Kafka($host, $port);
+            $kafka = new Kafka($broker['host'], $broker['port']);
 
             // add the kafka bronker to the list
-            $this->kafkaBrokerList[$brokerId] = $kafka;
+            $this->brokerList[$brokerId] = $kafka;
         }
 
-        return $this->kafkaBrokerList[$brokerId];
+        return $this->brokerList[$brokerId];
     }
 }

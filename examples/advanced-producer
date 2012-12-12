@@ -13,16 +13,30 @@
 // bootstrap
 require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
 
-// get script parameters
-$connector = $argv[1];
-$topic = $argv[2];
-$payload = $argv[3];
+$usage = "\nUsage: advanced-producer <zk.connect> <topicname> \"<message1>\" [\"<message2>\" [...]]";
+if (count($argv) <= 1)  {
+    exit($usage . "\n\n");
+}
 
 // create the producer
-$pc = new \Kafka\ProducerConnector($connector);
+$connector = $argv[1];
+$pc = \Kafka\ProducerConnector::Create($connector);
+
+// get the topic from the second argument
+if (count($argv) == 2)  {
+    exit("{$usage}\nAvailable topics:\n\n" . implode("\n", $pc->getAvailableTopics()) . "\n\n");
+}
+$topic = $argv[2];
 
 // add the messages (randomly distrubuted to the different broker/partitions)
-$pc->addMessage($topic, $payload);
+if (count($argv) == 3)  {
+    exit("{$usage}\n\n");
+}
+
+for($i=3; $i<count($argv); $i++) {
+    $payload = $argv[$i];
+    $pc->addMessage($topic, $payload);
+}
 
 // produce the actual messages into kafka
 $pc->produce();

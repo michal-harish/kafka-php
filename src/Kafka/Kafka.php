@@ -15,8 +15,9 @@ namespace Kafka;
 require_once "Exception.php";
 require_once "Offset.php";
 require_once "Message.php";
-require_once "IProducer.php";
 require_once "IConsumer.php";
+require_once "IMetadata.php";
+require_once "IProducer.php";
 require_once "TopicFilter.php";
 require_once "ConsumerConnector.php";
 require_once "ProducerConnector.php";
@@ -63,30 +64,39 @@ class Kafka
         $host = 'localhost',
         $port = 9092,
         $timeout = 6,
-        $kapiVersion = 0.7
+        $apiVersion = 0.7
     )
     {
         $this->host = $host;
         $this->port = $port;
         $this->timeout = $timeout;
-        if ($kapiVersion < 0.8)
+        $apiImplementation = self::getApiImplementation($apiVersion);
+        include_once "{$apiImplementation}/ProducerChannel.php";
+        $this->producerClass = "\Kafka\\$apiImplementation\ProducerChannel";
+        include_once "{$apiImplementation}/ConsumerChannel.php";
+        $this->consumerClass = "\Kafka\\$apiImplementation\ConsumerChannel";
+    }
+
+    /**
+     * @param float $apiVersion
+     * @return string 
+     */
+    public static function getApiImplementation($apiVersion) {
+        if ($apiVersion < 0.8)
         {
-            $kapiImplementation = "V07";
+            $apiImplementation = "V07";
         }
-        elseif ($kapiVersion < 0.8)
+        elseif ($apiVersion < 0.9)
         {
-            $kapiImplementation = "V08";
+            $apiImplementation = "V08";
         }
         else
         {
             throw new \Kafka\Exception(
-                "Unsupported Kafka API version $kapiVersion"
+                "Unsupported Kafka API version $apiVersion"
             );
         }
-        include_once "{$kapiImplementation}/ProducerChannel.php";
-        $this->producerClass = "\Kafka\\$kapiImplementation\ProducerChannel";
-        include_once "{$kapiImplementation}/ConsumerChannel.php";
-        $this->consumerClass = "\Kafka\\$kapiImplementation\ConsumerChannel";
+        return $apiImplementation;
     }
 
     /**

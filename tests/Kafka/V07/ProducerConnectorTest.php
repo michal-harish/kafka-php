@@ -11,10 +11,11 @@ class TestV07ProducerConnector extends \Kafka\ProducerConnector {
         TestV07ProducerChannel $producer1, 
         TestV07ProducerChannel $producer2,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
-        $partitioner = null) {
+        $partitioner = null
+    ) {
         $this->partitioner = $partitioner === null ? new \Kafka\Partitioner() : $partitioner;
         $this->compression = $compression;
-        $this->topicPartitionMapping = array(
+        $this->topicMetadata = array(
             'topic1' => array(
                 0 => array(
                     'broker' => 1,
@@ -38,7 +39,7 @@ class TestV07ProducerConnector extends \Kafka\ProducerConnector {
                 ),
             )
         );
-        $this->brokerMapping = array(
+        $this->brokerMetadata = array(
             1 => array( 
             	'name' => 'abc-1353063353941',
                 'host' => 'somehost-a',
@@ -184,4 +185,6 @@ foreach($p2t1q['topic1'] as $partition => $messages) {
     }
 }
 
+
+//TODO test cached connector
 

@@ -1,0 +1,45 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Console Consumer that uses high-level consumer connector and continuously
+ * polls for new messages with hard-coded back-off interval 1 second.
+ *
+ * 
+ * 
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2012-11-15
+ */
+
+// bootstrap
+require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+
+// get script parameters
+$usage = "\nUsage: console-producer \"<topic_filter>\" [<zk.connect>]";
+if (!isset($argv[1])) exit("$usage\n\n");
+$topicFilter = new \Kafka\Whitelist($argv[1]);
+$connectionString = isset($argv[2]) ? $argv[2] : 'localhost:2181';
+
+//initialize connections
+$consumerConnector = \Kafka\ConsumerConnector::Create($connectionString);
+$messageStreams = $consumerConnector->createMessageStreamsByFilter($topicFilter, 65535);
+
+$count = 0;
+while (true) {
+    $fetchCount = 0;
+
+    foreach ($messageStreams as $mid => $messageStream) {
+        // keep getting messages, if we have more
+        while ($message = $messageStream->nextMessage()) {
+            $count++;
+            // just print topic and payload
+            echo "{$count}. TOPIC=".$message->topic(). " PAYLOAD=";
+            var_dump($message->payload());
+        }
+    }
+
+    if ($fetchCount == 0) {
+        // no more messages, so sleep and try again
+        sleep(1);
+    }
+}

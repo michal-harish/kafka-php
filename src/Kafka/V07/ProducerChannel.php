@@ -160,4 +160,8 @@ class ProducerChannel
             return $batchPayload;
         }
     }
+
+    public function getMessageQueue() {
+        return $this->messageQueue;
+    }
 }

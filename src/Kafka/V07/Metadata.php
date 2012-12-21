@@ -22,6 +22,11 @@ class Metadata implements \Kafka\IMetadata
     private $zk;
 
     /**
+     * @var null|array
+     */
+    private $brokerMetadata;
+
+    /**
      * Construct
      */
     public function __construct($zkConnect)
@@ -37,6 +42,7 @@ class Metadata implements \Kafka\IMetadata
         if ($this->zk == null)
         {
             $this->zk = new \Zookeeper($this->zkConnect);
+            $this->brokerMetadata = null;
         }
     }
 
@@ -62,33 +68,45 @@ class Metadata implements \Kafka\IMetadata
 
     public function getBrokerInfo($brokerId)
     {
-        $this->zkConnect();
-        // will return something like:
-        // {something}-{numbers_that_looks_like_timestamp}:{host}:{port}
         if (!$brokerId || !is_numeric($brokerId)) {
             throw new \Kafka\Exception("Invalid brokerId `$brokerId`");
         }
-        $brokerIdentifier = $this->zk->get("/brokers/ids/$brokerId");
-
-        $parts = explode(":", $brokerIdentifier );
-        return array(
-            'name' => $parts[0],
-        	'host' => $parts[1],
-        	'port' => $parts[2],
-        );
+        $this->getBrokerMetadata();
+        if (!isset($this->brokerMetadata[$brokerId])) {
+            throw new \Kafka\Exception("Unknown brokerId `$brokerId`");
+        }
+        return $this->brokerMetadata[$brokerId];
     }
 
     public function getBrokerMetadata()
     {
         $this->zkConnect();
-        $brokerMetadata = array();
-        $brokers = $this->zk->getChildren("/brokers/ids");
-        foreach($brokers as $brokerId)
-        {
-            $brokerMetadata[$brokerId] = $this->getBrokerInfo($brokerId);
+        if ($this->brokerMetadata === null) {
+            $this->brokerMetadata = array();
+            $brokers = $this->zk->getChildren("/brokers/ids", array($this,'brokerWatcher'));
+            foreach($brokers as $brokerId)
+            {
+                $brokerIdentifier = $this->zk->get("/brokers/ids/$brokerId");
+                $parts = explode(":", $brokerIdentifier);
+                $this->brokerMetadata[$brokerId] = array(
+                    'name' => $parts[0],
+                	'host' => $parts[1],
+                	'port' => $parts[2],
+                );
+            }
         }
-        return $brokerMetadata;
+        return $this->brokerMetadata;
     }
 
+    public function brokerWatcher($type, $state, $path) {
+        if ($path=="/brokers/ids") {
+            $this->brokerMetadata = null;
+            //$this->topicMetadata = null;
+        }
+    }
+
+    public function needsRefereshing() {
+        return $this->brokerMetadata === null /*|| $this->topicMetadata === null*/;
+    }
 
 }

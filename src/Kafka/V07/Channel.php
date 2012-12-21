@@ -143,12 +143,11 @@ abstract class Channel
     protected function createSocket()
     {
         if (!is_resource($this->socket)) {
-            $this->socket = stream_socket_client(
+            if (!$this->socket = @stream_socket_client(
                 $this->connection->getConnectionString(),
                 $errno,
-                $errstr
-            );
-            if (!$this->socket) {
+                $errstr)
+            ) {
                 throw new \Kafka\Exception($errstr, $errno);
             }
             stream_set_timeout($this->socket, $this->connection->getTimeout());

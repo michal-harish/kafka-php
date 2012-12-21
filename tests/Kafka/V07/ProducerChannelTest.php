@@ -14,9 +14,6 @@ class TestV07ProducerChannel extends \Kafka\V07\ProducerChannel {
 	protected function createSocket() {
 		if (!is_resource($this->socket)) $this->socket = fopen("php://memory", "rw");
 	}
-	public function getMessageQueue() {
-	    return $this->messageQueue;
-	}
 }
 
 //test single message for multiple partitions of one topic without compression

@@ -167,6 +167,12 @@ class ProducerConnector
             $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
             $this->metadata = new $metadataClass($this->connectionString);
         }
+        if($this->producerList) {
+            foreach($this->producerList as $producer) {
+                $producer->close();
+            }
+            $this->producerList = array();
+        }
         $this->brokerMetadata = $this->metadata->getBrokerMetadata();
         $this->topicMetadata = $this->metadata->getTopicMetadata();
     }
@@ -190,8 +196,14 @@ class ProducerConnector
     {
         if (!array_key_exists($topic,$this->topicMetadata))
         {
-            throw new \Kafka\Exception(
-                "Unknown Kafka topic `$topic`"
+            if ($this->metadata !==null && $this->metadata->needsRefereshing()) {
+                $this->refreshMetadata();
+            }
+        }
+        if (!array_key_exists($topic,$this->topicMetadata))
+        {
+            throw new \Kafka\Exception\TopicUnavailable(
+                "Kafka topic `$topic` not available"
             );
         }
 
@@ -235,8 +247,28 @@ class ProducerConnector
      */
     final public function produce()
     {
+        $failedQueue = array();
         foreach ($this->producerList as $producer) {
-            $producer->produce();
+            try {
+                $producer->produce();
+
+            } catch (\Kafka\Exception $e) {
+                foreach($producer->getMessageQueue() as $topic => $partitions) {
+                    foreach($partitions as $partition => $messageSet ) {
+                        foreach($messageSet as $message) {
+                            $failedQueue[$topic][] = $message->payload();
+                        } 
+                    }
+                }
+            }
+        }
+        if ($failedQueue) {
+            $this->refreshMetadata();
+            foreach($failedQueue as $topic => $payloads) {
+                foreach($payloads as $payload) {
+                    $this->addMessage($topic, $payload);
+                }
+            }
         }
     }
 

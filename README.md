@@ -98,7 +98,6 @@ Backlog
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
  * TODO - ConsumerConnector zk watcher and rebalance on nextMessage
- * TODO - ProducerConnector zk watcher and rebalance
  * TODO - ConsumerConnector zk watcher and rebalance
  * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
  * TODO - Snappy compression - could not compile snappy.so on 64-bit :(

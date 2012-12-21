@@ -139,8 +139,8 @@ try {
 try {
     $producerConnector->addMessage("topicX", "hello", 0);
     throw new Exception("Expected \Kafka\Exception with invalid partitioner key type.");
-} catch (\Kafka\Exception $e) {
-    assert($e->getMessage() === "Unknown Kafka topic `topicX`" );
+} catch (\Kafka\Exception\TopicUnavailable $e) {
+    assert($e->getMessage() === "Kafka topic `topicX` not available" );
 }
 
 

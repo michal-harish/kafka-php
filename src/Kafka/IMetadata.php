@@ -21,4 +21,9 @@ interface IMetadata
      * @return array[<brokerId>] => array('name'=> ..., 'host'=>..., 'port' =>... )
      */
     function getBrokerMetadata();
+
+    /**
+     * @return boolean
+     */
+    function needsRefereshing();
 }

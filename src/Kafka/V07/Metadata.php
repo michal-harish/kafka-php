@@ -65,7 +65,7 @@ class Metadata implements \Kafka\IMetadata
         $this->zkConnect();
         // will return something like:
         // {something}-{numbers_that_looks_like_timestamp}:{host}:{port}
-        if (!$brokerId || !is_numeric($brokerId)) {
+        if (!is_numeric($brokerId)) {
             throw new \Kafka\Exception("Invalid brokerId `$brokerId`");
         }
         $brokerIdentifier = $this->zk->get("/brokers/ids/$brokerId");

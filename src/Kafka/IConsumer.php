@@ -21,12 +21,12 @@ interface IConsumer
     /**
      * FetchRequest
      *
-     * @param string $topic
-     * @param int $partition
-     * @param Offset $offset - Offset to fetch messages from
-     * @param int $maxFetchSize - Maximum bytes in a single fetch request
+     * @param  string           $topic
+     * @param  int              $partition
+     * @param  Offset           $offset       - Offset to fetch messages from
+     * @param  int              $maxFetchSize - Maximum bytes in a single fetch request
      * @throws \Kafka\Exception
-     * @return bool Ready-to-read state
+     * @return bool             Ready-to-read state
      */
     public function fetch(
         $topic,
@@ -43,7 +43,7 @@ interface IConsumer
      * if the program wants to check again later.
      *
      * @throws \Kafka\Exception
-     * @return Message | FLASE if no more messages
+     * @return Message          | FLASE if no more messages
      */
     public function nextMessage();
 
@@ -61,9 +61,9 @@ interface IConsumer
      * OffsetsRequest
      *
      * @param string $topic
-     * @param int $partition
-     * @param mixed $time - can be unixtimestamp or hex offset
-     * @param int $maxNumOffsets
+     * @param int    $partition
+     * @param mixed  $time          - can be unixtimestamp or hex offset
+     * @param int    $maxNumOffsets
      */
     public function offsets(
         $topic,

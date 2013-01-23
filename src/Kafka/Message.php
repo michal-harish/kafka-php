@@ -26,9 +26,9 @@ class Message
      * Constructor is private used by the static creator methods below.
      *
      * @param string $topic
-     * @param int $partition
+     * @param int    $partition
      * @param string $payload
-     * @param int $compression
+     * @param int    $compression
      * @param Offset $offset
      *
      * @throws \Kafka\Exception
@@ -41,19 +41,16 @@ class Message
         Offset $offset = NULL
     )
     {
-        if (!$topic)
-        {
+        if (!$topic) {
             throw new \Kafka\Exception("Topic name cannot be an empty string.");
         }
         $this->topic = $topic;
-        if (!is_numeric($partition) || $partition < 0)
-        {
+        if (!is_numeric($partition) || $partition < 0) {
             throw new \Kafka\Exception("Partition must be a positive integer or 0.");
         }
         $this->topic = $topic;
         $this->partition = $partition;
-        if ($offset === NULL)
-        {
+        if ($offset === NULL) {
             $offset = new Offset();
         }
         $this->offset = $offset;

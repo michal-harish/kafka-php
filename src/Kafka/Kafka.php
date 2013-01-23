@@ -12,17 +12,17 @@
 
 namespace Kafka;
 
-require_once "Exception.php";
-require_once "Offset.php";
-require_once "Message.php";
-require_once "IConsumer.php";
-require_once "IMetadata.php";
-require_once "IProducer.php";
-require_once "TopicFilter.php";
-require_once "ConsumerConnector.php";
-require_once "ProducerConnector.php";
-require_once "MessageStream.php";
-require_once "Partitioner.php";
+require_once 'Exception.php';
+require_once 'Offset.php';
+require_once 'Message.php';
+require_once 'IConsumer.php';
+require_once 'IMetadata.php';
+require_once 'IProducer.php';
+require_once 'TopicFilter.php';
+require_once 'ConsumerConnector.php';
+require_once 'ProducerConnector.php';
+require_once 'MessageStream.php';
+require_once 'Partitioner.php';
 
 class Kafka
 {
@@ -53,9 +53,9 @@ class Kafka
      * Constructor
      *
      * @param string $host
-     * @param int $port
-     * @param int $timeout
-     * @param int $kapiVersion Kafka API Version
+     * @param int    $port
+     * @param int    $timeout
+     * @param int    $kapiVersion Kafka API Version
      *     - the client currently recoginzes difference in the wire
      *    format prior to the version 0.8 and the versioned
      *    requests introduced in 0.8
@@ -78,24 +78,21 @@ class Kafka
     }
 
     /**
-     * @param float $apiVersion
-     * @return string 
+     * @param  float  $apiVersion
+     * @return string
      */
-    public static function getApiImplementation($apiVersion) {
-        if ($apiVersion < 0.8)
-        {
+    public static function getApiImplementation($apiVersion)
+    {
+        if ($apiVersion < 0.8) {
             $apiImplementation = "V07";
-        }
-        elseif ($apiVersion < 0.9)
-        {
+        } elseif ($apiVersion < 0.9) {
             $apiImplementation = "V08";
-        }
-        else
-        {
+        } else {
             throw new \Kafka\Exception(
                 "Unsupported Kafka API version $apiVersion"
             );
         }
+
         return $apiImplementation;
     }
 
@@ -121,6 +118,7 @@ class Kafka
     public function createProducer()
     {
         $producerClass = $this->producerClass;
+
         return new $producerClass($this);
     }
 
@@ -130,6 +128,7 @@ class Kafka
     public function createConsumer()
     {
         $consumerClass = $this->consumerClass;
+
         return new $consumerClass($this);
     }
 }

@@ -4,21 +4,21 @@ namespace Kafka;
 
 interface IMetadata
 {
-    function __construct($connectionString);
+    public function __construct($connectionString);
 
     /**
      * @return array[<topic>][<virutalPartition>] = array('broker'= <brokerId>, 'partition' = <brokerPartition>)
      */
-    function getTopicMetadata();
+    public function getTopicMetadata();
 
     /**
-     * @param int $brokerId
+     * @param  int            $brokerId
      * @return array('name'=> ..., 'host'=>..., 'port' =>... )
      */
-    function getBrokerInfo($brokerId);
+    public function getBrokerInfo($brokerId);
 
     /**
      * @return array[<brokerId>] => array('name'=> ..., 'host'=>..., 'port' =>... )
      */
-    function getBrokerMetadata();
+    public function getBrokerMetadata();
 }

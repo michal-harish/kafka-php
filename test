@@ -1,12 +1,12 @@
 #!/usr/bin/php
-<?php 
+<?php
 
 set_error_handler(function($errno,$errstr,$file,$line) {
     throw new ErrorException($errstr,$errno,0,$file,$line);
 });
 
 function dump($data) {
-    for($i=0; $i<strlen($data); $i++) { 
+    for($i=0; $i<strlen($data); $i++) {
         echo 'chr('.ord($data[$i]).').';
     }
 }
@@ -17,7 +17,7 @@ try {
 	foreach(
 	   array_merge(
 	       glob(__DIR__. "/tests/*/*.php"),
-	       glob(__DIR__. "/tests/*/*/*.php") 
+	       glob(__DIR__. "/tests/*/*/*.php")
        ) as $testCase
     )
 	{
@@ -35,4 +35,3 @@ try {
 }
 
 echo "\n\n";
-

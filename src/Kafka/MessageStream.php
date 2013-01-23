@@ -66,13 +66,12 @@ class MessageStream
      */
     private $hasFetched = false;
 
-
     /**
      * Construct
      *
-     * @param Kafka $kafka
-     * @param String $topic
-     * @param String $partition
+     * @param Kafka   $kafka
+     * @param String  $topic
+     * @param String  $partition
      * @param Integer $maxFetchSize
      */
     public function __construct(
@@ -138,13 +137,14 @@ class MessageStream
             $this->partition,
             \Kafka\Kafka::OFFSETS_EARLIEST
         );
+
         return $offsets[0];
     }
 
     /**
      * Get largest offset
      *
-     * Method that will return the largets available offset in 
+     * Method that will return the largets available offset in
      * the given partition.
      *
      * @return Offset
@@ -156,6 +156,7 @@ class MessageStream
             $this->partition,
             \Kafka\Kafka::OFFSETS_LATEST
         );
+
         return $offsets[0];
     }
 }

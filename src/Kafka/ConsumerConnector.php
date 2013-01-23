@@ -14,7 +14,7 @@ namespace Kafka;
 final class ConsumerConnector
 {
     /**
-     * @var \Kafka\IMetadata 
+     * @var \Kafka\IMetadata
      */
     private $metadata;
 
@@ -41,10 +41,12 @@ final class ConsumerConnector
         include_once "{$apiImplementation}/Metadata.php";
         $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
         $connector = new ConsumerConnector(new $metadataClass($connectionString));
+
         return $connector;
     }
 
-    protected function __construct(IMetadata $metadata) {
+    protected function __construct(IMetadata $metadata)
+    {
         $this->metadata = $metadata;
         $this->topicMetadata = $this->metadata->getTopicMetadata();
     }
@@ -52,27 +54,28 @@ final class ConsumerConnector
     /**
      * Create message streams by a given TopicFilter (either Whitelist or Blacklist)
      * with a given fetch size applied to each.
-     * 
-     * @param TopicFilter $filter
-     * @param Integer $maxFetchSize
-     * @return Array Array containing the list of consumer streams
+     *
+     * @param  TopicFilter $filter
+     * @param  Integer     $maxFetchSize
+     * @return Array       Array containing the list of consumer streams
      */
     public function createMessageStreamsByFilter(TopicFilter $filter, $maxFetchSize = 1000)
     {
         $messageStreams = array();
-        foreach($filter->getTopics(array_keys($this->topicMetadata)) as $topic) {
+        foreach ($filter->getTopics(array_keys($this->topicMetadata)) as $topic) {
             $topicMessageStreams = $this->createMessageStreams($topic, $maxFetchSize);
-            foreach($topicMessageStreams as $messageStream) {
+            foreach ($topicMessageStreams as $messageStream) {
                 $messageStreams[] = $messageStream;
             }
         }
+
         return $messageStreams;
     }
 
     /**
      * Create message streams
      *
-     * @param String $topic
+     * @param String  $topic
      * @param Integer $maxFetchSize
      *
      * @return Array Array containing the list of consumer streams

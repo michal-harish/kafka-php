@@ -22,9 +22,8 @@ function help()
     $help = implode ("\n", $output);
 
     // output the help
-	echo "\n\033[1;32m$scriptName\033[0m\n";
+    echo "\n\033[1;32m$scriptName\033[0m\n";
     echo "\n$help\n";
     echo "\nUsage: $script -c {connector} -t {topic}\n\n";
     exit(1);
 }
-

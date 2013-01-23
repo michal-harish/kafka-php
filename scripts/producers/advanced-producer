@@ -11,7 +11,7 @@
  */
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+require __DIR__ . "/../../src/Kafka/Kafka.php";
 
 $usage = "\nUsage: advanced-producer <zk.connect> <topicname> \"<message1>\" [\"<message2>\" [...]]";
 if (count($argv) <= 1)  {

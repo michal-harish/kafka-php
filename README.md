@@ -108,5 +108,3 @@ Backlog
     - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
     - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)
     - ProducerChannel - profile production (compression & serialization cost, )
- 
- 

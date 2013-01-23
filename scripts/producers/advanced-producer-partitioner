@@ -11,7 +11,7 @@
  */
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+require __DIR__ . "/../../src/Kafka/Kafka.php";
 
 $usage = "\nUsage: advanced-producer-partitioner <zk.connect> <topicname> \"<payload>\"";
 
@@ -29,8 +29,8 @@ class Md5Partitioner extends \Kafka\Partitioner {
     }
 }
 $producer = \Kafka\ProducerConnector::Create(
-    $connector, 
-    \Kafka\Kafka::COMPRESSION_NONE, 
+    $connector,
+    \Kafka\Kafka::COMPRESSION_NONE,
     new Md5Partitioner()
 );
 

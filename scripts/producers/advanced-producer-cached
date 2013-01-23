@@ -3,7 +3,7 @@
 
 /**
  * Advanced producer with cached connector for heavy-weight php producers.
- * 
+ *
  *
  *
  * @author      Michal Harish <michal.harish@gmail.com>
@@ -12,7 +12,7 @@
 $t = microtime(true);
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+require __DIR__ . "/../../src/Kafka/Kafka.php";
 
 $usage = "\nUsage: advanced-producer <zk.connect> <topicname> \"<message1>\" [\"<message2>\" [...]]";
 if (count($argv) <= 1)  {
@@ -41,7 +41,7 @@ try {
     $pc->produce();
     echo "Produced ". ($i-3 ). " messages in ". (microtime(true) - $t) . " sedonds\n";
 } catch (\Kafka\Exception $e) {
-    /* What should happen here is to unlink the $cacheFile because 
+    /* What should happen here is to unlink the $cacheFile because
      * the failure may have been due to one of the brokers going down,
      * and connector needs to be recreated to discover the new topology.
      */

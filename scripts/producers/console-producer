@@ -2,7 +2,7 @@
 <?php
 
 // bootstrap
-require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+require __DIR__ . "/../../src/Kafka/Kafka.php";
 
 // get arguments and defaults
 $usage = "\nUsage: console-producer <topicname> [<zk.connect>]";

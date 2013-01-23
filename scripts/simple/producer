@@ -2,8 +2,7 @@
 <?php
 
 // bootstrap
-chdir(dirname(__FILE__));
-require "../src/Kafka/Kafka.php";
+require __DIR__ . "/../../src/Kafka/Kafka.php";
 
 // arguments
 $topic = isset($_SERVER['argv'][1])

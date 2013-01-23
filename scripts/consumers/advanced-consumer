@@ -2,21 +2,34 @@
 <?php
 
 /**
- * Advanced consumer
+ * Consumer
  *
- * Script that will demonstrate a nice way to consume events from Kafka.
+ *. Script that demonstrates how to consume messages from a particular
+ *. Kafka topic.
  *
  * @author      Pau Gay <pau.gay@visualdna.com>
- * @date        2012-11-14
+ * @date        2013-01-23
  */
 
-// bootstrap
-require dirname(__FILE__) . "/../src/Kafka/Kafka.php";
+// require kafka-php library
+require __DIR__ . "/../../src/Kafka/Kafka.php";
+require __DIR__ . "/../help.php";
+
+// check script parametrs
+$options = getopt("c:t:");
+
+if (!isset($options["c"])
+    || !isset($options["t"])) {
+    help();
+}
 
 $connector = $argv[1];
 $topic = $argv[2];
 
+// create the connector
 $cc = new \Kafka\ConsumerConnector($connector);
+
+// create the message stream
 $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
 
 $counter = 0;

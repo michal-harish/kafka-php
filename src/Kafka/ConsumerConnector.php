@@ -14,6 +14,8 @@ namespace Kafka;
 final class ConsumerConnector
 {
     /**
+     * Metadata
+     *
      * @var \Kafka\IMetadata
      */
     private $metadata;
@@ -29,10 +31,18 @@ final class ConsumerConnector
     private $brokerList;
 
     /**
+     * Topic Metadata
+     *
      * @var array[<topic>][<virtual_partition>]
      */
     private $topicMetadata = array();
 
+    /**
+     * Create
+     *
+     * @param String $connectionString
+     * @param Float  $apiVersion
+     */
     public static function Create(
         $connectionString,
         $apiVersion = 0.7
@@ -40,11 +50,18 @@ final class ConsumerConnector
         $apiImplementation = Kafka::getApiImplementation($apiVersion);
         include_once "{$apiImplementation}/Metadata.php";
         $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
-        $connector = new ConsumerConnector(new $metadataClass($connectionString));
+        $connector = new ConsumerConnector(
+            new $metadataClass($connectionString)
+        );
 
         return $connector;
     }
 
+    /**
+     * Constructor
+     *
+     * @param IMetadata $metadata
+     */
     protected function __construct(IMetadata $metadata)
     {
         $this->metadata = $metadata;
@@ -52,18 +69,27 @@ final class ConsumerConnector
     }
 
     /**
-     * Create message streams by a given TopicFilter (either Whitelist or Blacklist)
-     * with a given fetch size applied to each.
+     * Create message streams by filter
+     *
+     * Create message streams by a given TopicFilter (either Whitelist or
+     * Blacklist) with a given fetch size applied to each.
      *
      * @param  TopicFilter $filter
      * @param  Integer     $maxFetchSize
      * @return Array       Array containing the list of consumer streams
      */
-    public function createMessageStreamsByFilter(TopicFilter $filter, $maxFetchSize = 1000)
+    public function createMessageStreamsByFilter(
+        TopicFilter $filter,
+        $maxFetchSize = 1000
+    )
     {
         $messageStreams = array();
-        foreach ($filter->getTopics(array_keys($this->topicMetadata)) as $topic) {
-            $topicMessageStreams = $this->createMessageStreams($topic, $maxFetchSize);
+        $topics = $filter->getTopics(array_keys($this->topicMetadata));
+        foreach ($topics as $topic) {
+            $topicMessageStreams = $this->createMessageStreams(
+                $topic,
+                $maxFetchSize
+            );
             foreach ($topicMessageStreams as $messageStream) {
                 $messageStreams[] = $messageStream;
             }

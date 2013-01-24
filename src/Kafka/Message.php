@@ -46,7 +46,9 @@ class Message
         }
         $this->topic = $topic;
         if (!is_numeric($partition) || $partition < 0) {
-            throw new \Kafka\Exception("Partition must be a positive integer or 0.");
+            throw new \Kafka\Exception(
+                "Partition must be a positive integer or 0."
+            );
         }
         $this->topic = $topic;
         $this->partition = $partition;

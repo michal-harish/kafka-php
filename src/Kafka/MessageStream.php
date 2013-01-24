@@ -78,14 +78,26 @@ class MessageStream
         Kafka $kafka,
         $topic,
         $partition,
-        $maxFetchSize
+        $maxFetchSize,
+        $offset = \Kafka\Kafka::OFFSET_LARGEST
     )
     {
         $this->consumer     = $kafka->createConsumer();
         $this->topic        = $topic;
         $this->partition    = $partition;
         $this->maxFetchSize = $maxFetchSize;
-        $this->offset       = $this->getLargestOffset();
+
+        if ($offset == \Kafka\Kafka::OFFSETS_LATEST) {
+            $this->offset = $this->getLargestOffset();
+        } else if ($offset == \Kafka\Kafka::OFFSETS_EARLIEST) {
+            $this->offset = $this->getSmallestOffset();
+        } else {
+            throw new \Kafka\Exception(
+                "Unrecognized offset, at the moment it only supports "
+                . "'\Kafka\Kafka::OFFSETS_LATEST' or "
+                . "'\Kafka\Kafka::OFFSETS_EARLIEST' constants."
+            );
+        }
     }
 
     /**

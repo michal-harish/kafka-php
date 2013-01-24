@@ -37,6 +37,7 @@ parameters convention are shared across all the scripts but different
 scripts has different parameters.
 
     -c  Connector, set which Zookeeper server you want to connect
+    -b  Broker, the Kafka broker where we want to connect
     -t  Topic, sets the topic where you want to produce
     -m  Message, sets the message you want to produce
     -l  List, will list the available topics

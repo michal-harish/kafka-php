@@ -1,64 +1,165 @@
 Kafka PHP
 =========
 
-This is an alternative to the existing Kafka PHP Client which is in the incubator,
-the main motivation to write it was that it seemed important
-that the fetch requests are not loaded entirely into memory but
-pulled continuously from the socket as well as the fact that php has a different control flow
-and communication pattern (each request is a thread within http server)
-so the api doesn't need to follow the scala/java object graph and can be much simpler.
+This is an alternative to the existing Kafka PHP Client which is in the 
+incubator, the main motivation to write it was that it seemed important
+that the fetch requests are not loaded entirely into memory but pulled 
+continuously from the socket as well as the fact that PHP has a different 
+control flow and communication pattern (each request is a thread within 
+HTTP server) so the api doesn't need to follow the scala/java object graph 
+and can be much simpler.
  
-There are few differences to the existing Kafka PHP client:
+There are few differences to the existing Kafka PHP Client:
      
-    - Streaming message individually rather than loading the whole response into memory
-    - Offset implemented by hexdecimal tranformation to fully support Kafka long offsets
-    - Gzip working correctly both ways, including the pre-compression message header
-    - Messages produced in batch consumed correctly in compressed as well as uncompressed state
+    - Streaming message individually rather than loading the whole response 
+      into memory
+    - Offset implemented by hexdecimal tranformation to fully support Kafka 
+      long offsets
+    - Gzip working correctly both ways, including the pre-compression message 
+      header
+    - Messages produced in batch consumed correctly in compressed as well 
+      as uncompressed state
     - CRC32 check working
-    - Producers and Consumers are abstracted to allow for changes in Kafka API without disrupting the client code
+    - Producers and Consumers are abstracted to allow for changes in Kafka 
+      API without disrupting the client code
     - Broker abstraction for different connection strategies
     - OffsetRequest workaround for 64-bit unix timestamp
     - Produce request only checks correct bytes were sent (ack not available)
-    - Producer compresses batches of consecutive messages with same compression codec as a single message
+    - Producer compresses batches of consecutive messages with same 
+      compression codec as a single message
 
 
-Sample consumers
-========
+Example Scripts
+===============
 
-Consumer that will consume a single message
--------------
+There is a set of example scripts under the 'script' folder. The
+parameters convention are shared across all the scripts but different
+scripts has different parameters.
 
-    require dirname(__FILE__) . "/src/Kafka.php";
+    -c  Connector, set which Zookeeper server you want to connect
+    -t  Topic, sets the topic where you want to produce
+    -m  Message, sets the message you want to produce
+    -l  List, will list the available topics
+    -o  Offset (optional), sets the starting point where
+        we want to consume
+    -h  Help, it will display the help for the script
 
-    $cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
-    $messageStreams = $cc->createMessageStreams("adviews", 65535);
-    foreach ($messageStreams as $mid => $messageStream) {
-        while ($message = $messageStream->nextMessage()) {
-            echo $message->payload() . "\n";
-            die;
-        }
-    }
+Those are the available scripts:
+
+    ./scripts/simple/producer -b {broker} -t {topc}
+    ./scripts/simple/producer -b hq-pau-d02:9092 -t test-topic
+
+    ./scripts/simple/consumer -b {broker} -t {topic} [-o {offset}]
+    ./scripts/simple/consumer -b hq-pau-d02:9092 -t test-topic
+
+    ./scripts/producers/producer -c {connector} -t {topic} -m {message}
+    ./scripts/producers/producer -c hq-pau-d02:2181 -t test-topic -m "Hello"
+
+    ./scripts/producers/cached -c {connector} -t {topic} -m {message}
+    ./scripts/producers/cached -c hq-pau-d02:2181 -t test-topic -m "Hello"
+
+    ./scripts/producers/partitioned -c {connector} -t {topic} -m {message}
+    ./scripts/producers/partitioned -c hq-pau-d02:2181 -t test-topic -m "Hello"
+
+    ./scripts/producers/daemon -c {connector} -t {topic}
+    ./scripts/producers/daemon -c hq-pau-d02:2181 -t test-topic
+
+    ./scripts/consumers/consumer -c {connector} -t {topic} 
+    ./scripts/consumers/consumer -c hq-pau-d02:2181 -t test-topic 
+
+    ./scripts/consumers/daemon -c {connector} -t {topic}
+    ./scripts/consumers/daemon -c hq-pau-d02:2181 -t test-topic
 
 
-Consumer that will consume all the messages from a topic
--------------
+Unit Tests
+==========
 
-    require dirname(__FILE__) . "/src/Kafka.php";
+Tests is a set of native PHP assert() calls included by the main runner:
 
-    $cc = new Kafka_ConsumerConnector("bl-queue-s01:2181");
-    $messageStreams = $cc->createMessageStreams("adviews", 65535);
+    $> ./test
 
+
+Tutorials
+=========
+
+This is not a tutorial, but will ilustrate how to create simple producer
+and consumer, just to ilustrate how to use the kafka-php library.
+
+Simple producer
+---------------
+
+This code will produce a message to the given topic.
+
+    // require kafka-php library
+    require __DIR__ . "/../../src/Kafka/Kafka.php";
+    
+    $connector = "hq-pau-d02:2181";
+    $topic     = "test-topic";
+    $message   = "Hello world!";
+    
+    $producer = \Kafka\ProducerConnector::Create($connector);
+    
+    // add the message
+    $producer->addMessage($topic, $message);
+    
+    // produce the actual messages into kafka
+    $producer->produce();
+
+
+Simple consumer 
+---------------
+
+This will show how to create a consumer and consume a single message.
+Not that usefull, but will ilustrate the point.
+
+    require __DIR__ . "/../../src/Kafka/Kafka.php";
+    
+    // setting variables
+    $connector = "hq-pau-d02:2181";
+    $topic     = "test-topic";
+    
+    // create the connector
+    $cc = new \Kafka\ConsumerConnector($connector);
+    
+    // create the message stream
+    $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
+    
+    // get the message
+    $message = $messageStream->nextMessage();
+    
+    // output the message
+    echo $message ."\n";
+    
+
+Consume all messages from a topic 
+---------------------------------
+
+This consumer will do a similar thing, but will consume all messages
+for a particular given topic, since the beginning (offset = 0).
+
+    require __DIR__ . "/../../src/Kafka/Kafka.php";
+    
+    // setting variables
+    $connector = "hq-pau-d02:2181";
+    $topic     = "test-topic";
+    
+    // create the connector
+    $cc = new \Kafka\ConsumerConnector($connector);
+    
+    // create the message stream
+    $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
+    
+    // infinite loop
     while (true) {
         $fetchCount = 0;
-
+    
         foreach ($messageStreams as $mid => $messageStream) {
             while ($message = $messageStream->nextMessage()) {
-                $fetchCount ++;
+                $fetchCount++;
                 echo $message->payload() . "\n";
             }
-            echo "\n";
         }
-
+    
         if ($fetchCount == 0) {
             echo "No more messages.\n";
             die;
@@ -66,34 +167,11 @@ Consumer that will consume all the messages from a topic
     }
 
 
-Example Scripts
-========
-
-    ./examples/simple-producer {topic} {broker}
-    ./examples/simple-producer test-topic hq-mharis-d01:9092
-
-    ./examples/simple-consumer {topic} --broker {broker} --offset {start-offset}
-    ./examples/simple-consumer test-topic --broker hq-mharis-d01:9092 --offset 0
-
-    ./examples/advanced-producer {connector} {topic} {message}
-
-    ./examples/advanced-producer-cached {connector} {topic} {message}
-
-    ./examples/advanced-producer-partitioner {connector} {topic} {message}
-
-    ./examples/advanced-consumer {connector} {topic}
-    ./examples/advanced-consumer hq-mharis-d01:2181 test
-
-    ./examples/consumer-daemon {connector} {topic}
-    ./examples/consumer-daemon hq-mharis-d01:2181 poker
-
-Unit Tests
-==========
-    Tests are just native php assert() calls included by the main runner:
-    $> ./test
-
 Backlog
 =======
+
+Those are the list of pending tasks:
+
  * TODO - ConsumerConnector option for autooffset.reset (there are various opinions about this)
  * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
  * TODO - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...

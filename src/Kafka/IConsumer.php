@@ -43,7 +43,7 @@ interface IConsumer
      * if the program wants to check again later.
      *
      * @throws \Kafka\Exception
-     * @return Message          | FLASE if no more messages
+     * @return Message|FALSE     if no more messages
      */
     public function nextMessage();
 

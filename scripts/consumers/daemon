@@ -47,6 +47,7 @@ while (true) {
     foreach ($messageStreams as $mid => $messageStream) {
         // keep getting messages, if we have more
         while ($message = $messageStream->nextMessage()) {
+            $fetchCount++;
             $count++;
             // just print topic and payload
             echo "{$count}. TOPIC=".$message->topic(). " PAYLOAD=";

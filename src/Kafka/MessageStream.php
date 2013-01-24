@@ -73,13 +73,14 @@ class MessageStream
      * @param String  $topic
      * @param String  $partition
      * @param Integer $maxFetchSize
+     * @param Integer $offset
      */
     public function __construct(
         Kafka $kafka,
         $topic,
         $partition,
         $maxFetchSize,
-        $offset = \Kafka\Kafka::OFFSET_LARGEST
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
     )
     {
         $this->consumer     = $kafka->createConsumer();

@@ -46,7 +46,8 @@ final class ConsumerConnector
     public static function Create(
         $connectionString,
         $apiVersion = 0.7
-    ) {
+    )
+    {
         $apiImplementation = Kafka::getApiImplementation($apiVersion);
         include_once "{$apiImplementation}/Metadata.php";
         $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
@@ -76,11 +77,13 @@ final class ConsumerConnector
      *
      * @param  TopicFilter $filter
      * @param  Integer     $maxFetchSize
+     * @param  Integer     $offset
      * @return Array       Array containing the list of consumer streams
      */
     public function createMessageStreamsByFilter(
         TopicFilter $filter,
-        $maxFetchSize = 1000
+        $maxFetchSize = 1000,
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
     )
     {
         $messageStreams = array();
@@ -88,7 +91,8 @@ final class ConsumerConnector
         foreach ($topics as $topic) {
             $topicMessageStreams = $this->createMessageStreams(
                 $topic,
-                $maxFetchSize
+                $maxFetchSize,
+                $offset
             );
             foreach ($topicMessageStreams as $messageStream) {
                 $messageStreams[] = $messageStream;
@@ -101,12 +105,17 @@ final class ConsumerConnector
     /**
      * Create message streams
      *
-     * @param String  $topic
-     * @param Integer $maxFetchSize
-     *
-     * @return Array Array containing the list of consumer streams
+     * @param  String      $topic
+     * @param  Integer     $maxFetchSize
+     * @param  Integer     $offset
+     * @return Array                      Array containing the list of consumer
+     *                                    streams
      */
-    public function createMessageStreams($topic, $maxFetchSize = 1000)
+    public function createMessageStreams(
+        $topic,
+        $maxFetchSize = 1000,
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
+    )
     {
         if (!isset($this->topicMetadata[$topic])) {
             throw new \Kafka\Exception("Unknown topic `{$topic}`");
@@ -119,7 +128,8 @@ final class ConsumerConnector
                 $broker,
                 $topic,
                 $partition,
-                $maxFetchSize
+                $maxFetchSize,
+                $offset
             );
         }
 

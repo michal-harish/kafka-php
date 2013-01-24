@@ -5,7 +5,8 @@
  *. Consumer
  *.
  *. Script that demonstrates how to consume messages from a particular
- *. Kafka topic.
+ *. Kafka topic. This script will get all messages from a given topic,
+ *. starting from the earliest possible offset until the end.
  *.
  *. Usage: ./scripts/consumers/consumer -c {connector} -t {topic}
  *.
@@ -33,24 +34,23 @@ $connector = $options["c"];
 $topic     = $options["t"];
 
 // create the connector
-$cc = new \Kafka\ConsumerConnector($connector);
+$cc = \Kafka\ConsumerConnector::Create($connector);
 
 // create the message stream
-$messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
-
-$counter = 0;
+$messageStreams = $cc->createMessageStreams(
+    $topic,
+    65535,
+    \Kafka\Kafka::OFFSETS_EARLIEST
+);
 
 while (true) {
     $fetchCount = 0;
 
     foreach ($messageStreams as $mid => $messageStream) {
         while ($message = $messageStream->nextMessage()) {
-            $counter++;
             $fetchCount++;
-            echo str_repeat(chr(8), 10);
-            echo str_pad($mid . ' ' . $counter, 10, ' ');
+            echo "{$message->payload()}\n";
         }
-        echo "\n";
     }
 
     if ($fetchCount == 0) {
@@ -58,5 +58,3 @@ while (true) {
         exit();
     }
 }
-
-echo "Counter = $counter\n";

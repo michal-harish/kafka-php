@@ -90,46 +90,52 @@ Simple producer
 
 This code will produce a message to the given topic.
 
-    // require kafka-php library
-    require __DIR__ . "/../../src/Kafka/Kafka.php";
-    
-    $connector = "hq-pau-d02:2181";
-    $topic     = "test-topic";
-    $message   = "Hello world!";
-    
+    // require kafka-php library                            
+    require "kafka-php/src/Kafka/Kafka.php";                
+                                                            
+    $connector = "hq-pau-d02:2181";                         
+    $topic     = "test-topic";                              
+    $message   = "Hello world!";                            
+                                                            
     $producer = \Kafka\ProducerConnector::Create($connector);
-    
-    // add the message
-    $producer->addMessage($topic, $message);
-    
-    // produce the actual messages into kafka
-    $producer->produce();
+                                                            
+    // add the message                                      
+    $producer->addMessage($topic, $message);                
+                                                            
+    // produce the actual messages into kafka               
+    $producer->produce();                          
 
 
-Simple consumer 
+Simple consumer
 ---------------
 
 This will show how to create a consumer and consume a single message.
 Not that usefull, but will ilustrate the point.
 
-    require __DIR__ . "/../../src/Kafka/Kafka.php";
-    
-    // setting variables
-    $connector = "hq-pau-d02:2181";
-    $topic     = "test-topic";
-    
-    // create the connector
-    $cc = new \Kafka\ConsumerConnector($connector);
-    
-    // create the message stream
-    $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
-    
-    // get the message
-    $message = $messageStream->nextMessage();
-    
-    // output the message
-    echo $message ."\n";
-    
+    // require kafka-php library                           
+    require "kafka-php/src/Kafka/Kafka.php";               
+                                                           
+    // setting variables                                   
+    $connector = "hq-pau-d02:2181";                        
+    $topic     = "test-topic";                             
+                                                           
+    // create the connector                                
+    $cc = \Kafka\ConsumerConnector::Create($connector);    
+                                                           
+    // create the message stream, we point to the beginning
+    // of the topic offset                                 
+    $messageStream = $cc->createMessageStreams(            
+        $topic,                                            
+        65535,                                             
+        \Kafka\Kafka::OFFSETS_EARLIEST                     
+    );                                                     
+                                                           
+    // get the message                                     
+    $message = $messageStream[0]->nextMessage();           
+                                                           
+    // output the message                                  
+    echo $message->payload() ."\n";                        
+
 
 Consume all messages from a topic 
 ---------------------------------
@@ -137,34 +143,86 @@ Consume all messages from a topic
 This consumer will do a similar thing, but will consume all messages
 for a particular given topic, since the beginning (offset = 0).
 
-    require __DIR__ . "/../../src/Kafka/Kafka.php";
-    
-    // setting variables
-    $connector = "hq-pau-d02:2181";
-    $topic     = "test-topic";
-    
-    // create the connector
-    $cc = new \Kafka\ConsumerConnector($connector);
-    
-    // create the message stream
-    $messageStreams = $cc->createMessageStreams($topic, 65535 * 10);
-    
-    // infinite loop
-    while (true) {
-        $fetchCount = 0;
-    
-        foreach ($messageStreams as $mid => $messageStream) {
-            while ($message = $messageStream->nextMessage()) {
-                $fetchCount++;
-                echo $message->payload() . "\n";
-            }
-        }
-    
-        if ($fetchCount == 0) {
-            echo "No more messages.\n";
-            die;
-        }
-    }
+    // require kafka-php library                                
+    require "kafka-php/src/Kafka/Kafka.php";                    
+                                                                
+    // setting variables                                        
+    $connector = "hq-pau-d02:2181";                             
+    $topic     = "test-topic";                                  
+                                                                
+    // create the connector                                     
+    $cc = \Kafka\ConsumerConnector::Create($connector);         
+                                                                
+    // create the message stream, we point to the beginning     
+    // of the topic offset                                      
+    $messageStreams = $cc->createMessageStreams(                
+        $topic,                                                 
+        65535,                                                  
+        \Kafka\Kafka::OFFSETS_EARLIEST                          
+    );                                                          
+                                                                
+    // infinite loop                                            
+    while (true) {                                              
+        $fetchCount = 0;                                        
+                                                                
+        foreach ($messageStreams as $mid => $messageStream) {   
+            while ($message = $messageStream->nextMessage()) {  
+                $fetchCount++;                                  
+                echo $message->payload() . "\n";                
+            }                                                   
+        }                                                       
+                                                                
+        if ($fetchCount == 0) {                                 
+            echo " --- no more messages ---\n";                 
+            die;                                                
+        }                                                       
+    }                                                           
+
+
+Consumer daemon
+---------------
+
+And finally, some closer to the real usage of this library. A consumer that 
+will listen for new messages produced for a particular topic. The changes 
+with regard to the previous consumers are that this time we ware going to 
+set the highest possible offset, in order to ignore the past messages and 
+only intercept the new ones.
+
+    // require kafka-php library                                
+    require "kafka-php/src/Kafka/Kafka.php";                    
+                                                                
+    // setting variables                                        
+    $connector = "hq-pau-d02:2181";                             
+    $topic     = "test-topic";                                  
+                                                                
+    // create the connector                                     
+    $cc = \Kafka\ConsumerConnector::Create($connector);         
+                                                                
+    // create the message stream, we point to the end           
+    // of the topic offset                                      
+    $messageStreams = $cc->createMessageStreams(                
+        $topic,                                                 
+        65535,                                                  
+        \Kafka\Kafka::OFFSETS_LATEST                            
+    );                                                          
+                                                                
+    while (true) {                                              
+        $fetchCount = 0;                                        
+                                                                
+        foreach ($messageStreams as $mid => $messageStream) {   
+            // keep getting messages, if we have more           
+            while ($message = $messageStream->nextMessage()) {  
+                $fetchCount++;                                  
+                // just print topic and payload                 
+                echo "{$message->payload()}\n";                 
+            }                                                   
+        }                                                       
+                                                                
+        if ($fetchCount == 0) {                                 
+            // no more messages, so sleep and try again         
+            sleep(1);                                           
+        }                                                       
+    }                                                           
 
 
 Backlog
@@ -181,7 +239,7 @@ Those are the list of pending tasks:
  * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
  * TODO - Snappy compression - could not compile snappy.so on 64-bit :(
  * TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood
- 
+
  * TODO - profiling & optimization
     - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
     - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)

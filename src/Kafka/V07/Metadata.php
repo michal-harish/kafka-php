@@ -3,8 +3,6 @@
 namespace Kafka\V07;
 
 use Kafka\Kafka;
-use Kafka\Message;
-use Kafka\IProducer;
 
 class Metadata implements \Kafka\IMetadata
 {
@@ -39,19 +37,18 @@ class Metadata implements \Kafka\IMetadata
      */
     private function zkConnect()
     {
-        if ($this->zk == null)
-        {
+        if ($this->zk == null) {
             $this->zk = new \Zookeeper($this->zkConnect);
             $this->brokerMetadata = null;
         }
     }
 
-    public function getTopicMetadata() 
+    public function getTopicMetadata()
     {
         $this->zkConnect();
         $topicMetadata = array();
-        foreach($this->zk->getChildren("/brokers/topics") as $topic) {
-            foreach($this->zk->getChildren("/brokers/topics/$topic") as $brokerId) {
+        foreach ($this->zk->getChildren("/brokers/topics") as $topic) {
+            foreach ($this->zk->getChildren("/brokers/topics/$topic") as $brokerId) {
                 $partitionCount = (int) $this->zk->get(
                     "/brokers/topics/$topic/$brokerId"
                 );
@@ -63,6 +60,7 @@ class Metadata implements \Kafka\IMetadata
                 }
             }
         }
+
         return $topicMetadata;
     }
 
@@ -80,8 +78,8 @@ class Metadata implements \Kafka\IMetadata
 
     public function getBrokerMetadata()
     {
-        $this->zkConnect();
         if ($this->brokerMetadata === null) {
+            $this->zkConnect();
             $this->brokerMetadata = array();
             $brokers = $this->zk->getChildren("/brokers/ids", array($this,'brokerWatcher'));
             foreach($brokers as $brokerId)

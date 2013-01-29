@@ -16,7 +16,7 @@ use Kafka\Message;
 use Kafka\Offset;
 use Kafka\IConsumer;
 
-require_once "Channel.php";
+require_once 'Channel.php';
 
 class ConsumerChannel
     extends Channel
@@ -57,9 +57,9 @@ class ConsumerChannel
      * Fetch
      *
      * @param string $topic
-     * @param int $partition
-     * @param Offset $offset - Offset to fetch messages from
-     * @param int $maxFetchSize - Maximum bytes in a single fetch request
+     * @param int    $partition
+     * @param Offset $offset       - Offset to fetch messages from
+     * @param int    $maxFetchSize - Maximum bytes in a single fetch request
      *
      * @throws \Kafka\Exception
      *
@@ -152,9 +152,9 @@ class ConsumerChannel
     /**
      * Offsets
      *
-     * @param string $topic
-     * @param int $partition
-     * @param mixed $time
+     * @param string       $topic
+     * @param int          $partition
+     * @param mixed        $time
      * @param unknown_type $maxNumOffsets
      */
     public function offsets(

@@ -2,12 +2,11 @@
 
 require_once __DIR__ . "/../../src/Kafka/Kafka.php";
 
-
 $partitioner = new \Kafka\Partitioner();
 
 //test random partitioning
 $result = array();
-for($i=0; $i<10; $i++) {
+for ($i=0; $i<10; $i++) {
     $result[$partitioner->partition(null, 10)] = true;
 }
 assert(count($result)>1);
@@ -34,9 +33,12 @@ try {
 }
 
 //test uuid partitioner uniformity of distribution
-class TestUuidPartitioner extends \Kafka\Partitioner {
-    public function partition($uuid, $numPartitions) {
+class TestUuidPartitioner extends \Kafka\Partitioner
+{
+    public function partition($uuid, $numPartitions)
+    {
         $hex = str_replace("-", "", $uuid);
+
         return crc32($hex) % $numPartitions;
     }
 }
@@ -53,7 +55,7 @@ gzclose($uuids);
 assert($parts === array(3321, 3237, 3442));
 $sum = array_sum($parts);
 $avg = $sum / count($parts);
-$var = array_reduce($parts, function(&$variance, $item) use($avg) { return $variance += pow($avg -  $item, 2); }) / count($parts);
+$var = array_reduce($parts, function(&$variance, $item) use ($avg) { return $variance += pow($avg -  $item, 2); }) / count($parts);
 $std = sqrt($var);
 $err = round(100 * $std / $sum, 1);
 //echo " AVG = $avg, STD = $std, ERR = % $err ";

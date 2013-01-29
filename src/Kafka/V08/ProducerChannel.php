@@ -15,8 +15,6 @@ namespace Kafka\V08;
 
 use Kafka\Kafka;
 use Kafka\Message;
-use Kafka\Offset;
-use Kafka\IConsumer;
 
 require_once realpath(dirname(__FILE__) . '/../V07/Channel.php');
 
@@ -41,21 +39,21 @@ class ProducerChannel
     /**
      * Add a single message to the produce queue.
      *
-     * @param Message|string $message
-     * @return boolean Success
+     * @param  Message|string $message
+     * @return boolean        Success
      */
     public function add(Message $message)
     {
-    	$this->messageQueue
-    		[$message->topic()]
-    		[$message->partition()]
-    		[] = $message;
+        $this->messageQueue
+            [$message->topic()]
+            [$message->partition()]
+            [] = $message;
     }
 
     /**
      * Produce all messages added.
      * @throws \Kafka\Exception On Failure
-     * @return TRUE On Success
+     * @return TRUE             On Success
      */
     public function produce()
     {
@@ -77,42 +75,35 @@ class ProducerChannel
         //produce request topic structure
         $numTopics = count($this->messageQueue);
         $data .= pack('N', $numTopics);//int
-        foreach($this->messageQueue as $topic => $partitions)
-        {
-        	$data .= pack('n', strlen($topic)) . $topic;//short string
-        	$data .= pack('N', count($partitions));//int
-        	foreach($partitions as $partition => $messageSet)
-        	{
-        		$data .= pack('N', $partition);//int
-        		$messageSetData = '';
-		    	foreach($messageSet as $message)
-		    	{
-		    		$messageSetData .= $this->packMessage($message);
-		    	}
-        		$data .= pack('N', strlen($messageSetData)); //int
-        		$data .= $messageSetData; //
-        	}
+        foreach ($this->messageQueue as $topic => $partitions) {
+            $data .= pack('n', strlen($topic)) . $topic;//short string
+            $data .= pack('N', count($partitions));//int
+            foreach ($partitions as $partition => $messageSet) {
+                $data .= pack('N', $partition);//int
+                $messageSetData = '';
+                foreach ($messageSet as $message) {
+                    $messageSetData .= $this->packMessage($message);
+                }
+                $data .= pack('N', strlen($messageSetData)); //int
+                $data .= $messageSetData; //
+            }
         }
-        if ($this->send($data))
-        {
-       		if ($this->hasIncomingData())
-       		{
-       			$this->messageQueue = array();
-       			if ($this->getRemainingBytes() == 0)
-       			{
-       				throw new \Kafka\Exception(
-       					"Something went wrong but Kafka is not sending propper error code"
-       				);
-       			}
-       			exit("!" . $this->getRemainingBytes() . "\n");
-       			return TRUE;
+        if ($this->send($data)) {
+               if ($this->hasIncomingData()) {
+                   $this->messageQueue = array();
+                   if ($this->getRemainingBytes() == 0) {
+                       throw new \Kafka\Exception(
+                           "Something went wrong but Kafka is not sending propper error code"
+                       );
+                   }
+                   exit("!" . $this->getRemainingBytes() . "\n");
 
-       		}
-       		else
-       		{
-       			 throw new \Kafka\Exception("Produce request was not acknowledged by the broker");
-       		}
+                   return TRUE;
+
+               } else {
+                    throw new \Kafka\Exception("Produce request was not acknowledged by the broker");
+               }
         }
         throw new \Kafka\Exception("Produce request was not sent.");
-	}
+    }
 }

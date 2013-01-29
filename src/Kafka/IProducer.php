@@ -27,7 +27,7 @@ interface IProducer
     /**
      * Produce all messages added.
      * @throws \Kafka\Exception On Failure
-     * @return TRUE On Success
+     * @return TRUE             On Success
      */
     public function produce();
 

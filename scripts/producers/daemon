@@ -1,0 +1,58 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ *. Daemon
+ *.
+ *. Producer that will read from standard input and will produce
+ *. messages as we get data. Note this producer doesn't need any
+ *. message as a parameter. Use CTRL+C to finalise the daemon.
+ *.
+ *.
+ *. Usage: ./scripts/producers/partitioned -c {connector} -t {topic}
+ *.        ./scripts/producers/partitioned -c {connector} -l
+ *.
+ *.     -c  Connector, set which Zookeeper server you want to connect
+ *.     -t  Topic, sets the topic where you want to produce
+ *.     -l  List, will list the available topics
+ *.     -h  Help, will display the help for the script
+ *
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2013-01-24
+ */
+
+// check script parametrs
+$options = getopt("hc:t:l");
+
+// require kafka-php library
+require __DIR__ . "/../../src/Kafka/Kafka.php";
+require __DIR__ . "/../help.php";
+
+if (!isset($options["c"])) {
+    help();
+}
+
+$connector = $options["c"];
+$producer = \Kafka\ProducerConnector::Create($connector);
+
+if (isset($options["l"]) && $options["l"] === false) {
+    echo "\nAvailable topics:\n\n - "
+        . implode("\n - ", $producer->getAvailableTopics())
+        . "\n\n";
+    exit(1);
+}
+
+if (!isset($options["t"])) {
+    help();
+}
+
+$topic = $options["t"];
+
+// connection to the standard input
+$stdin = fopen('php://stdin', 'r');
+
+while ($line = fgets($stdin))
+{
+    $producer->addMessage($topic, $line);
+    $producer->produce();
+}

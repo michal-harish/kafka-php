@@ -14,7 +14,9 @@ namespace Kafka;
 final class ConsumerConnector
 {
     /**
-     * @var \Kafka\IMetadata 
+     * Metadata
+     *
+     * @var \Kafka\IMetadata
      */
     private $metadata;
 
@@ -29,55 +31,91 @@ final class ConsumerConnector
     private $brokerList;
 
     /**
+     * Topic Metadata
+     *
      * @var array[<topic>][<virtual_partition>]
      */
     private $topicMetadata = array();
 
+    /**
+     * Create
+     *
+     * @param String $connectionString
+     * @param Float  $apiVersion
+     */
     public static function Create(
         $connectionString,
         $apiVersion = 0.7
-    ) {
+    )
+    {
         $apiImplementation = Kafka::getApiImplementation($apiVersion);
         include_once "{$apiImplementation}/Metadata.php";
         $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
-        $connector = new ConsumerConnector(new $metadataClass($connectionString));
+        $connector = new ConsumerConnector(
+            new $metadataClass($connectionString)
+        );
+
         return $connector;
     }
 
-    protected function __construct(IMetadata $metadata) {
+    /**
+     * Constructor
+     *
+     * @param IMetadata $metadata
+     */
+    protected function __construct(IMetadata $metadata)
+    {
         $this->metadata = $metadata;
         $this->topicMetadata = $this->metadata->getTopicMetadata();
     }
 
     /**
-     * Create message streams by a given TopicFilter (either Whitelist or Blacklist)
-     * with a given fetch size applied to each.
-     * 
-     * @param TopicFilter $filter
-     * @param Integer $maxFetchSize
-     * @return Array Array containing the list of consumer streams
+     * Create message streams by filter
+     *
+     * Create message streams by a given TopicFilter (either Whitelist or
+     * Blacklist) with a given fetch size applied to each.
+     *
+     * @param  TopicFilter $filter
+     * @param  Integer     $maxFetchSize
+     * @param  Integer     $offset
+     * @return Array       Array containing the list of consumer streams
      */
-    public function createMessageStreamsByFilter(TopicFilter $filter, $maxFetchSize = 1000)
+    public function createMessageStreamsByFilter(
+        TopicFilter $filter,
+        $maxFetchSize = 1000,
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
+    )
     {
         $messageStreams = array();
-        foreach($filter->getTopics(array_keys($this->topicMetadata)) as $topic) {
-            $topicMessageStreams = $this->createMessageStreams($topic, $maxFetchSize);
-            foreach($topicMessageStreams as $messageStream) {
+        $topics = $filter->getTopics(array_keys($this->topicMetadata));
+        foreach ($topics as $topic) {
+            $topicMessageStreams = $this->createMessageStreams(
+                $topic,
+                $maxFetchSize,
+                $offset
+            );
+            foreach ($topicMessageStreams as $messageStream) {
                 $messageStreams[] = $messageStream;
             }
         }
+
         return $messageStreams;
     }
 
     /**
      * Create message streams
      *
-     * @param String $topic
-     * @param Integer $maxFetchSize
-     *
-     * @return Array Array containing the list of consumer streams
+     * @param  String      $topic
+     * @param  Integer     $maxFetchSize
+     * @param  Integer     $offset
+     * @return Array                      Array containing the list of consumer
+     *                                    streams
      */
-    public function createMessageStreams($topic, $maxFetchSize = 1000)
+    public function createMessageStreams(
+        $topic,
+        $maxFetchSize = 1000,
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
+    )
     {
         if (!isset($this->topicMetadata[$topic])) {
             throw new \Kafka\Exception("Unknown topic `{$topic}`");
@@ -90,7 +128,8 @@ final class ConsumerConnector
                 $broker,
                 $topic,
                 $partition,
-                $maxFetchSize
+                $maxFetchSize,
+                $offset
             );
         }
 

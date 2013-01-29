@@ -2,11 +2,10 @@
 
 require_once __DIR__ . "/../../src/Kafka/Kafka.php";
 
-
 $topics = array(
     'topic',
     'topic1',
-	'topic2',
+    'topic2',
     'topictest',
     'useractivity',
     'pageviews',

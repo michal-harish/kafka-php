@@ -15,7 +15,7 @@ use Kafka\Kafka;
 use Kafka\Message;
 use Kafka\IProducer;
 
-require_once "Channel.php";
+require_once 'Channel.php';
 
 class ProducerChannel
     extends Channel
@@ -157,6 +157,7 @@ class ProducerChannel
                     $batchCompression
                 )
             );
+
             return $batchPayload;
         }
     }

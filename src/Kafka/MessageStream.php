@@ -66,27 +66,39 @@ class MessageStream
      */
     private $hasFetched = false;
 
-
     /**
      * Construct
      *
-     * @param Kafka $kafka
-     * @param String $topic
-     * @param String $partition
+     * @param Kafka   $kafka
+     * @param String  $topic
+     * @param String  $partition
      * @param Integer $maxFetchSize
+     * @param Integer $offset
      */
     public function __construct(
         Kafka $kafka,
         $topic,
         $partition,
-        $maxFetchSize
+        $maxFetchSize,
+        $offset = \Kafka\Kafka::OFFSETS_LATEST
     )
     {
         $this->consumer     = $kafka->createConsumer();
         $this->topic        = $topic;
         $this->partition    = $partition;
         $this->maxFetchSize = $maxFetchSize;
-        $this->offset       = $this->getLargestOffset();
+
+        if ($offset == \Kafka\Kafka::OFFSETS_LATEST) {
+            $this->offset = $this->getLargestOffset();
+        } else if ($offset == \Kafka\Kafka::OFFSETS_EARLIEST) {
+            $this->offset = $this->getSmallestOffset();
+        } else {
+            throw new \Kafka\Exception(
+                "Unrecognized offset, at the moment it only supports "
+                . "'\Kafka\Kafka::OFFSETS_LATEST' or "
+                . "'\Kafka\Kafka::OFFSETS_EARLIEST' constants."
+            );
+        }
     }
 
     /**
@@ -138,13 +150,14 @@ class MessageStream
             $this->partition,
             \Kafka\Kafka::OFFSETS_EARLIEST
         );
+
         return $offsets[0];
     }
 
     /**
      * Get largest offset
      *
-     * Method that will return the largets available offset in 
+     * Method that will return the largets available offset in
      * the given partition.
      *
      * @return Offset
@@ -156,6 +169,7 @@ class MessageStream
             $this->partition,
             \Kafka\Kafka::OFFSETS_LATEST
         );
+
         return $offsets[0];
     }
 }

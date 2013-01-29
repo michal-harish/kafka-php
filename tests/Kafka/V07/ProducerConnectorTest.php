@@ -1,14 +1,14 @@
-<?php 
+<?php
 
 require_once __DIR__ . "/../../../src/Kafka/Kafka.php";
 
 use Kafka\Kafka;
 use Kafka\Message;
 
-class TestV07ProducerConnector extends \Kafka\ProducerConnector {
-
+class TestV07ProducerConnector extends \Kafka\ProducerConnector
+{
     public function __construct(
-        TestV07ProducerChannel $producer1, 
+        TestV07ProducerChannel $producer1,
         TestV07ProducerChannel $producer2,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
         $partitioner = null
@@ -40,13 +40,13 @@ class TestV07ProducerConnector extends \Kafka\ProducerConnector {
             )
         );
         $this->brokerMetadata = array(
-            1 => array( 
-            	'name' => 'abc-1353063353941',
+            1 => array(
+                'name' => 'abc-1353063353941',
                 'host' => 'somehost-a',
                 'port' => 9092,
             ),
-            2 => array( 
-            	'name' => 'xyz-1353063353941',
+            2 => array(
+                'name' => 'xyz-1353063353941',
                 'host' => 'somehost-b',
                 'port' => 9092,
             ),
@@ -73,14 +73,14 @@ assert($producer2->getStreamContents() === '');
 assert($producer1->getStreamContents() === '');
 assert($producer2->getMessageQueue() === array());
 $messageQueue = $producer1->getMessageQueue();
-assert(count($messageQueue) === 1); 
+assert(count($messageQueue) === 1);
 assert(isset($messageQueue['topic1']));
 $topic1Queue = $messageQueue['topic1'];
 assert(count($topic1Queue[0]) == 3);
 assert(count($topic1Queue[1]) == 2);
 assert(count($topic1Queue[2]) == 2);
-foreach($topic1Queue as $partition => $messages) {
-    foreach($messages as $message) {
+foreach ($topic1Queue as $partition => $messages) {
+    foreach ($messages as $message) {
         assert($message instanceof \Kafka\Message);
         assert($message->partition() == $partition);
         assert($message->payload() === 'hello 1');
@@ -88,7 +88,7 @@ foreach($topic1Queue as $partition => $messages) {
     }
 }
 $producerConnector->produce();
-assert($producer2->getStreamContents() === ''); // nothing should go to the producer 2 
+assert($producer2->getStreamContents() === ''); // nothing should go to the producer 2
 assert($producer1->getStreamContents() > '');
 
 //test deterministic partitioner goes to broker2 for given keys with compression enabled
@@ -107,8 +107,8 @@ assert(isset($messageQueue['topic1']));
 $topic1Queue = $messageQueue['topic1'];
 assert(count($topic1Queue[0]) == 2);
 assert(count($topic1Queue[1]) == 2);
-foreach($topic1Queue as $partition => $messages) {
-    foreach($messages as $message) {
+foreach ($topic1Queue as $partition => $messages) {
+    foreach ($messages as $message) {
         assert($message instanceof \Kafka\Message);
         assert($message->partition() == $partition);
         assert($message->payload() === 'hello 2');
@@ -116,7 +116,7 @@ foreach($topic1Queue as $partition => $messages) {
     }
 }
 $producerConnector->produce();
-assert($producer1->getStreamContents() === ''); // nothing should go to the producer 1 
+assert($producer1->getStreamContents() === ''); // nothing should go to the producer 1
 assert($producer2->getStreamContents() === chr(0).chr(0).chr(0).chr(68).chr(0).chr(0).chr(0).chr(6).chr(116).chr(111).chr(112).chr(105)
     .chr(99).chr(49).chr(0).chr(0).chr(0).chr(0).chr(0).chr(0).chr(0).chr(50).chr(0).chr(0).chr(0).chr(46).chr(1).chr(1).chr(39)
     .chr(126).chr(11).chr(89).chr(31).chr(139).chr(8).chr(0).chr(0).chr(0).chr(0).chr(0).chr(0).chr(3).chr(99).chr(96).chr(96).chr(224)
@@ -143,13 +143,15 @@ try {
     assert($e->getMessage() === "Kafka topic `topicX` not available" );
 }
 
-
 //test custom partitioner by date-as-day-of-week
 $producer1 = new TestV07ProducerChannel(new Kafka());
 $producer2 = new TestV07ProducerChannel(new Kafka());
-class TestDatePartitioner extends \Kafka\Partitioner {
-    public function partition($key, $numPartitions) {
+class TestDatePartitioner extends \Kafka\Partitioner
+{
+    public function partition($key, $numPartitions)
+    {
         $intKey = idate("w", strtotime($key));
+
         return $intKey % $numPartitions;
     }
 }
@@ -168,16 +170,16 @@ assert(count($p1t1q['topic1'][1]) === 2);
 assert(count($p1t1q['topic1'][2]) === 1);
 assert(count($p2t1q['topic1'][0]) === 1);
 assert(count($p2t1q['topic1'][1]) === 1);
-foreach($p1t1q['topic1'] as $partition => $messages) {
-    foreach($messages as $message) {
+foreach ($p1t1q['topic1'] as $partition => $messages) {
+    foreach ($messages as $message) {
         assert($message instanceof \Kafka\Message);
         assert($message->partition() == $partition);
         assert($message->payload() === 'hello 1');
         assert($message->compression() == \Kafka\Kafka::COMPRESSION_GZIP);
     }
 }
-foreach($p2t1q['topic1'] as $partition => $messages) {
-    foreach($messages as $message) {
+foreach ($p2t1q['topic1'] as $partition => $messages) {
+    foreach ($messages as $message) {
         assert($message instanceof \Kafka\Message);
         assert($message->partition() == $partition);
         assert($message->payload() === 'hello 2');
@@ -185,6 +187,4 @@ foreach($p2t1q['topic1'] as $partition => $messages) {
     }
 }
 
-
 //TODO test cached connector
-

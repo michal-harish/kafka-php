@@ -1,0 +1,81 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ *. Producer
+ *.
+ *. Simple producer script that will connect directly to Kafka broker,
+ *. skipping the Zookeper layer. It will automatically produce some
+ *. messaged, you don't need to insert any.
+ *.
+ *. Usage: ./scripts/simple/producer -b {broker} -t {topic}
+ *.
+ *.     -b  Broker, the Kafka broker where we want to connect
+ *.     -t  Topic, sets the topic where you want to produce
+ *.     -h  Help, will display the help for the script
+ *
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2013-01-24
+ */
+
+// check script parametrs
+$options = getopt("hb:t:");
+
+// require kafka-php library
+require __DIR__ . "/../../src/Kafka/Kafka.php";
+require __DIR__ . "/../help.php";
+
+if (!isset($options["b"])
+    || !isset($options["t"])) {
+    help();
+}
+
+$broker = $options["b"];
+$topic  = $options["t"];
+
+list($host,$port) = explode(":", $options["b"]);
+
+// connection
+$kafka = new \Kafka\Kafka($host, $port, 6, 0.71);
+
+// request channel
+$producer = $kafka->createProducer();
+
+// add a few messages
+$producer->add(
+    new \Kafka\Message(
+        $topic,
+        0,
+        'MESSAGE 1 - passed as uncompressed message object',
+        \Kafka\Kafka::COMPRESSION_NONE
+    )
+);
+
+for ($i=2; $i<100; $i++)
+{
+	$producer->add(
+		new \Kafka\Message(
+            $topic,
+            0,
+			"MESSAGE $i - passed as consecutive compressed message object",
+			\Kafka\Kafka::COMPRESSION_GZIP
+		)
+	);
+}
+
+$producer->add(
+    new \Kafka\Message(
+        'test',
+        0,
+        'MESSAGE 100 - passed as compressed message object to a different topic `test`',
+        \Kafka\Kafka::COMPRESSION_GZIP
+    )
+);
+
+if ($producer->produce())
+{
+    echo "Published to '$topic'.\n";
+}
+
+// go home
+$producer->close();

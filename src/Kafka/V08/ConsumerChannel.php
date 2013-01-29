@@ -15,7 +15,6 @@ namespace Kafka\V08;
 
 use Kafka\Kafka;
 use Kafka\Message;
-use Kafka\Offset;
 use Kafka\IConsumer;
 
 require_once realpath(dirname(__FILE__) . '/../V07/Channel.php');

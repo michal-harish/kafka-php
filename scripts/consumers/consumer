@@ -1,0 +1,60 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ *. Consumer
+ *.
+ *. Script that demonstrates how to consume messages from a particular
+ *. Kafka topic. This script will get all messages from a given topic,
+ *. starting from the earliest possible offset until the end.
+ *.
+ *. Usage: ./scripts/consumers/consumer -c {connector} -t {topic}
+ *.
+ *.     -c  Connector, set which Zookeeper server you want to connect
+ *.     -t  Topic, sets the topic where you want to produce
+ *.     -h  Help, will display the help for the script
+ *
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2013-01-23
+ */
+
+// check script parametrs
+$options = getopt("hc:t:");
+
+// require kafka-php library
+require __DIR__ . "/../../src/Kafka/Kafka.php";
+require __DIR__ . "/../help.php";
+
+if (!isset($options["c"])
+    || !isset($options["t"])) {
+    help();
+}
+
+$connector = $options["c"];
+$topic     = $options["t"];
+
+// create the connector
+$cc = \Kafka\ConsumerConnector::Create($connector);
+
+// create the message stream
+$messageStreams = $cc->createMessageStreams(
+    $topic,
+    65535,
+    \Kafka\Kafka::OFFSETS_EARLIEST
+);
+
+while (true) {
+    $fetchCount = 0;
+
+    foreach ($messageStreams as $mid => $messageStream) {
+        while ($message = $messageStream->nextMessage()) {
+            $fetchCount++;
+            echo "{$message->payload()}\n";
+        }
+    }
+
+    if ($fetchCount == 0) {
+        sleep(1);
+        exit();
+    }
+}

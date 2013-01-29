@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 require_once __DIR__ . "/../../src/Kafka/Kafka.php";
 
@@ -12,10 +12,10 @@ assert($message->offset() == new \Kafka\Offset());
 
 //test message without defaults
 $message = new \Kafka\Message(
-	"topic2", 4, 
-	"Hello Topic2!", 
-	\Kafka\Kafka::COMPRESSION_GZIP,
-	new \Kafka\Offset("f3fb45")
+    "topic2", 4,
+    "Hello Topic2!",
+    \Kafka\Kafka::COMPRESSION_GZIP,
+    new \Kafka\Offset("f3fb45")
 );
 assert($message->topic() === "topic2");
 assert($message->partition() === 4);

@@ -94,8 +94,8 @@ abstract class Channel
     /**
      * Constructor
      *
-     * @param Kafka $connection
-     * @param String $topic
+     * @param Kafka   $connection
+     * @param String  $topic
      * @param Integer $partition
      */
     public function __construct(\Kafka\Kafka $connection)
@@ -155,6 +155,7 @@ abstract class Channel
             //stream_set_read_buffer($this->socket,  65535);
             //stream_set_write_buffer($this->socket, 65535);
         }
+
         return $this->socket;
     }
 
@@ -163,7 +164,7 @@ abstract class Channel
      *
      * Send a bounded request.
      *
-     * @param String $requestData
+     * @param String  $requestData
      * @param Boolean $expectsResponse
      *
      * @throws \Kafka\Exception
@@ -174,8 +175,7 @@ abstract class Channel
         while ($retry > 0) {
             if ($this->socket === null) {
                 $this->createSocket();
-            }
-            elseif ($this->socket === false) {
+            } elseif ($this->socket === false) {
                 throw new \Kafka\Exception(
                     "Kafka channel could not be created."
                 );
@@ -259,7 +259,8 @@ abstract class Channel
                 }
             }
             $retrying = true;
-        }        
+        }
+
         return $result;
     }
 
@@ -277,6 +278,7 @@ abstract class Channel
     {
         if (is_resource($this->innerStream)) {
             $this->readBytes = 0;
+
             return true;
         }
 
@@ -303,9 +305,9 @@ abstract class Channel
                     "Could not read kafka response header."
                 );
             }
-            $this->responseSize = current(unpack('N', $bytes32));                        
+            $this->responseSize = current(unpack('N', $bytes32));
             $bytes16 = $this->read(2);
-            $errorCode = current(unpack('n', $bytes16));            
+            $errorCode = current(unpack('n', $bytes16));
             if ($errorCode != 0) {
                 throw new \Kafka\Exception(
                     "Kafka response channel error code: $errorCode"
@@ -325,6 +327,7 @@ abstract class Channel
             return false;
         } else {
             $this->readBytes = 0;
+
             return true;
         }
     }
@@ -355,7 +358,7 @@ abstract class Channel
      * Internal method for packing message into kafka wire format.
      *
      * @param Message $message
-     * @param Mixed $overrideCompression Null or \Kafka\Kafka::COMPRESSION_NONE
+     * @param Mixed   $overrideCompression Null or \Kafka\Kafka::COMPRESSION_NONE
      * or
      *      \Kafka\Kafka::COMPRESSION_GZIP, etc.
      *
@@ -370,7 +373,7 @@ abstract class Channel
             ? $message->compression()
             : $overrideCompression;
 
-        switch($compression) {
+        switch ($compression) {
             case \Kafka\Kafka::COMPRESSION_NONE:
                 $compressedPayload = $message->payload();
                 break;
@@ -409,7 +412,7 @@ abstract class Channel
      *
      * @param unknown_type $topic
      * @param unknown_type $partition
-     * @param Offset $offset
+     * @param Offset       $offset
      * @param unknown_type $stream
      *
      * @throws \Kafka\Exception
@@ -447,7 +450,7 @@ abstract class Channel
             throw new \Kafka\Exception("Invalid Kafka Message");
         }
 
-        switch($magic = array_shift($magic)) {
+        switch ($magic = array_shift($magic)) {
             case \Kafka\Kafka::MAGIC_0:
                 $compression = \Kafka\Kafka::COMPRESSION_NONE;
                 $payloadSize = $size - 5;
@@ -466,7 +469,7 @@ abstract class Channel
         }
 
         $crc32 = current(unpack('N', $this->read(4, $stream)));
-        switch($compression) {
+        switch ($compression) {
             default:
                 throw new \Kafka\Exception(
                     "Unknown kafka compression $compression"
@@ -552,7 +555,7 @@ abstract class Channel
 
                 $payloadBuffer = fopen('php://temp', 'rw');
 
-                switch($gzmethod) {
+                switch ($gzmethod) {
                     case 0: //copy
                         $uncompressedSize = fwrite(
                             $payloadBuffer,
@@ -651,6 +654,7 @@ abstract class Channel
         }
         fclose($this->innerStream);
         $this->innerStream = null;
+
         return false;
     }
 }

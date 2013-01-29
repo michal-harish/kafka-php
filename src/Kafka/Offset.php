@@ -27,6 +27,7 @@ class Offset
     {
         $offset = new Offset();
         $offset->data = $data;
+
         return $offset;
     }
 
@@ -58,6 +59,7 @@ class Offset
                 STR_PAD_LEFT
             );
         }
+
         return $result;
     }
 
@@ -110,7 +112,7 @@ class Offset
 
     /**
      * Internal parser for hex values
-     * @param string $hex
+     * @param  string           $hex
      * @throws \Kafka\Exception
      */
     private function hexdata($hex)
@@ -126,6 +128,7 @@ class Offset
             $h = substr($hex, $i * 2, 2);
             $result[$i] = chr(hexdec($h));
         }
+
         return $result;
     }
 

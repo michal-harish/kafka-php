@@ -8,11 +8,11 @@
  *
  * @author     Pau Gay <pau.gay@gmail.com>
  * @date       2012-11-15
- * 
+ *
  * The connector can be cached using serialize() function which will pack all the information
  * retreived from zookeeper so that things don't have to be rediscovered at every request, but
  * the application needs to decide how to do the actual caching.
- * 
+ *
  * @author     Michal Hairsh <michal.harish@gmail.com>
  * @date 2012-12-03
  */
@@ -22,13 +22,13 @@ namespace Kafka;
 class ProducerConnector
 {
 
-    /** 
+    /**
      * \Kafka\ProducerConnect::Create(...)
-     * 
-     * @param unknown_type $connectionString
-     * @param unknown_type $compression
-     * @param Partitioner $partitioner
-     * @param unknown_type $apiVersion
+     *
+     * @param  unknown_type     $connectionString
+     * @param  unknown_type     $compression
+     * @param  Partitioner      $partitioner
+     * @param  unknown_type     $apiVersion
      * @throws \Kafka\Exception
      */
     public static function Create(
@@ -45,17 +45,18 @@ class ProducerConnector
             throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
         }
         $connector->partitioner = $partitioner;
+
         return $connector;
 
     }
 
     /**
      * \Kafka\ProducerConnect::CreateCached(...)
-     * 
-     * @param unknown_type $connectionString
-     * @param unknown_type $compression
-     * @param Partitioner $partitioner
-     * @param unknown_type $apiVersion
+     *
+     * @param  unknown_type     $connectionString
+     * @param  unknown_type     $compression
+     * @param  Partitioner      $partitioner
+     * @param  unknown_type     $apiVersion
      * @throws \Kafka\Exception
      */
     public static function CreateCached(
@@ -65,8 +66,7 @@ class ProducerConnector
         $apiVersion = 0.7
     ) {
         $cacheFile = sys_get_temp_dir() . "/kafka-connector-{$apiVersion}-" . md5(serialize($connectionString));
-        if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60)
-        {
+        if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60) {
             //create new connector and so redisover topics and brokers
             $connector = \Kafka\ProducerConnector::Create($connectionString);
             //and cache for another minute
@@ -81,6 +81,7 @@ class ProducerConnector
             throw new \Kafka\Exception("partitioner must be instance of Partitioner class");
         }
         $connector->partitioner = $partitioner;
+
         return $connector;
     }
 
@@ -160,7 +161,8 @@ class ProducerConnector
         $this->refreshMetadata();
     }
 
-    private function refreshMetadata() {
+    private function refreshMetadata()
+    {
         if ($this->metadata == null) {
             $apiImplementation = Kafka::getApiImplementation($this->apiVersion);
             include_once "{$apiImplementation}/Metadata.php";
@@ -178,8 +180,8 @@ class ProducerConnector
      * decide which is the partition where we are going to send the
      * message and will send it.
      *
-     * @param String $topic
-     * @param String $payload
+     * @param String           $topic
+     * @param String           $payload
      * @param Partitioner|NULL $partitioner
      */
     final public function addMessage(
@@ -188,8 +190,7 @@ class ProducerConnector
         $key = null
     )
     {
-        if (!array_key_exists($topic,$this->topicMetadata))
-        {
+        if (!array_key_exists($topic,$this->topicMetadata)) {
             throw new \Kafka\Exception(
                 "Unknown Kafka topic `$topic`"
             );
@@ -199,8 +200,7 @@ class ProducerConnector
         $numPartitions = count($this->topicMetadata[$topic]);
 
         $i = $this->partitioner->partition($key, $numPartitions);
-        if (!is_integer($i) || $i<0 || $i>$numPartitions-1) 
-        {
+        if (!is_integer($i) || $i<0 || $i>$numPartitions-1) {
             throw new \Kafka\Exception(
                 "Partitioner must return 0 <= integer < $numPartitions, returned $i"
             );
@@ -220,7 +220,7 @@ class ProducerConnector
         // get the actual producer we will add the mesasge
         if (!isset($this->producerList[$brokerId])) {
             $producer = $this->getProducerByBrokerId($brokerId);
-            $this->producerList[$brokerId] = $producer; 
+            $this->producerList[$brokerId] = $producer;
         } else {
             $producer = $this->producerList[$brokerId];
         }
@@ -243,11 +243,13 @@ class ProducerConnector
     /**
      * @return array of topic names
      */
-    final public function getAvailableTopics() {
+    final public function getAvailableTopics()
+    {
         $result = array();
-        foreach($this->topicMetadata as $topic=>$partitions) {
+        foreach ($this->topicMetadata as $topic=>$partitions) {
             $result[] = "{$topic} [" . count($partitions). "]";
         }
+
         return $result;
     }
 
@@ -263,7 +265,8 @@ class ProducerConnector
     /**
      * @return multitype:string
      */
-    final public function __sleep() {
+    final public function __sleep()
+    {
         return array('topicMetadata','connectionString','apiVersion', 'brokerMetadata');
     }
 
@@ -279,16 +282,16 @@ class ProducerConnector
     protected function getProducerByBrokerId($brokerId)
     {
         if (!isset($this->producerList[$brokerId])) {
-            if (!isset($this->brokerMetadata[$brokerId]))
-            {
+            if (!isset($this->brokerMetadata[$brokerId])) {
                 throw new \Kafka\Exception(
-                	"Broker connection paramters not initialized for broker $brokerId"
+                    "Broker connection paramters not initialized for broker $brokerId"
                 );
             }
             $broker = $this->brokerMetadata[$brokerId];
             $kafka = new Kafka($broker['host'], $broker['port']);
             $this->producerList[$brokerId] = $kafka->createProducer();
         }
+
         return $this->producerList[$brokerId];
     }
 

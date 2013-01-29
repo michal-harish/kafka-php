@@ -1,0 +1,55 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ *. Producer
+ *.
+ *. Script that will demonstrate a nice way to produce events from Kafka.
+ *.
+ *. Usage: ./scripts/producers/producer -c {connector} -t {topic} -m {message}
+ *.        ./scripts/producers/producer -c {connector} -l
+ *.
+ *.     -c  Connector, set which Zookeeper server you want to connect
+ *.     -t  Topic, sets the topic where you want to produce
+ *.     -m  Message, sets the message you want to produce
+ *.     -l  List, will list the available topics
+ *.     -h  Help, will display the help for the script
+ *
+ * @author      Pau Gay <pau.gay@visualdna.com>
+ * @date        2012-11-15
+ */
+
+// check script parametrs
+$options = getopt("hc:t:m:l");
+
+// require kafka-php library
+require __DIR__ . "/../../src/Kafka/Kafka.php";
+require __DIR__ . "/../help.php";
+
+if (!isset($options["c"])) {
+    help();
+}
+
+$connector = $options["c"];
+$producer = \Kafka\ProducerConnector::Create($connector);
+
+if (isset($options["l"]) && $options["l"] === false) {
+    echo "\nAvailable topics:\n\n - "
+        . implode("\n - ", $producer->getAvailableTopics())
+        . "\n\n";
+    exit(1);
+}
+
+if (!isset($options["t"])
+    || !isset($options["m"])) {
+    help();
+}
+
+$topic     = $options["t"];
+$message   = $options["m"];
+
+// add the message
+$producer->addMessage($topic, $message);
+
+// produce the actual messages into kafka
+$producer->produce();

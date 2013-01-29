@@ -10,40 +10,48 @@ namespace Kafka;
 
 abstract class TopicFilter
 {
-    final public function getTopics(array $allTopics) {
+    final public function getTopics(array $allTopics)
+    {
         $resultTopics = array();
-        foreach($allTopics as $topic) {
+        foreach ($allTopics as $topic) {
             if ($this->topicPassesFilter($topic)) {
                 $resultTopics[] = $topic;
             }
         }
+
         return $resultTopics;
     }
 
     /**
-     * @param String $topic
-     * @return boolean 
+     * @param  String  $topic
+     * @return boolean
      */
     abstract protected function topicPassesFilter($topic);
 
 }
 
-class Whitelist extends TopicFilter {
+class Whitelist extends TopicFilter
+{
     private $regex;
-    public function __construct($regex) {
+    public function __construct($regex)
+    {
         $this->regex = $regex;
     }
-    protected function topicPassesFilter($topic) {
+    protected function topicPassesFilter($topic)
+    {
         return preg_match("/^{$this->regex}$/", $topic);
     }
 }
 
-class Blacklist extends TopicFilter {
+class Blacklist extends TopicFilter
+{
     private $regex;
-    public function __construct($regex) {
+    public function __construct($regex)
+    {
         $this->regex = $regex;
     }
-    protected function topicPassesFilter($topic) {
+    protected function topicPassesFilter($topic)
+    {
         return !preg_match("/^{$this->regex}$/", $topic);
     }
 }

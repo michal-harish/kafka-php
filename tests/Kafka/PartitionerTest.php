@@ -36,10 +36,9 @@ try {
 class TestUuidPartitioner extends \Kafka\Partitioner
 {
     public function partition($uuid, $numPartitions)
-    {
+    {    	
         $hex = str_replace("-", "", $uuid);
-
-        return crc32($hex) % $numPartitions;
+        return abs(crc32($hex)) % $numPartitions;
     }
 }
 $uuids = gzopen(__DIR__ . "/../uuid10000.csv.gz", "r");
@@ -52,7 +51,8 @@ while ($uuid = gzgets($uuids)) {
     }
 }
 gzclose($uuids);
-assert($parts === array(3321, 3237, 3442));
+
+assert($parts === array(3228, 3330, 3442) || $parts === array(3321, 3237, 3442)); //32bit && 64bit
 $sum = array_sum($parts);
 $avg = $sum / count($parts);
 $var = array_reduce($parts, function(&$variance, $item) use ($avg) { return $variance += pow($avg -  $item, 2); }) / count($parts);

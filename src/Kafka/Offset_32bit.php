@@ -37,8 +37,7 @@ class Offset_32bit extends Offset
      */
     public function setData($data)
     {
-    	$offset->data = $data;    
-    	return $offset;
+    	$this->data = $data;    
     }
     
 

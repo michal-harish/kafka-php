@@ -168,8 +168,8 @@ class ConsumerChannel
         $data .= pack('n', strlen($topic)) . $topic;
         $data .= pack('N', $partition);
 
-        if (is_string($time)) {
-            //convert hex constant to a long offset
+        if (is_string($time) || $time <0) {
+            //convert literal to Offset 
             $offset = new Offset($time);
         } else {
             //make 64-bit unix timestamp offset

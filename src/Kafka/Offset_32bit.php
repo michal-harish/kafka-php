@@ -21,10 +21,15 @@ class Offset_32bit extends Offset
      * Creating new offset can take initial hex value,
      * e.g new Offset("078c88cc700ff")
      *
-     * @param string $fromString Hexadecimal string
+     * @param string|int $fromString Hexadecimal string
      */
     public function __construct($fromString = null)
     {
+        if (is_numeric($fromString)) {
+	    	if (-1 == $fromString ) $fromString = "ffffffffffffffff"; //-1L
+	    	else if (-2 == $fromString) $fromString = "fffffffffffffffe"; //-2L
+	    	else $fromString = dechex($fromString);
+        }
         $this->data = str_repeat(chr(0), 8);
         if ($fromString) {
             $this->data = $this->hexdata($fromString);

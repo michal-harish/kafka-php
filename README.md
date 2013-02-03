@@ -29,7 +29,7 @@ There are few differences to the existing Kafka PHP Client:
       compression codec as a single message
 
 
-Example Scripts
+Console Scripts
 ===============
 
 There is a set of example scripts under the 'script' folder. The
@@ -245,3 +245,41 @@ Those are the list of pending tasks:
     - Channel - implement buffer in the hasIncomingData to speed-up the streaming and read from that buffer in the read() method
     - ConsumerChannel - profile consumption (decompression & descerialization cost, flushing broken response stream)
     - ProducerChannel - profile production (compression & serialization cost, )
+   
+   
+Appendix - compiling php-zookeeper from source extension on ubuntu for apache2
+==============================================================================
+First prepare for compiling c sources and automake tools if you aren't
+
+    sudo apt-get install build-essential checkinstall libcppunit-dev autoconf automake libtool ant
+    
+Then you'll need to compile the libzookeeper from the c sources
+
+    sudo git clone git://github.com/apache/zookeeper.git /usr/share/zookeeper
+    cd /usr/share/zookeeper/
+    sudo ant compile_jute
+    cd src/c
+    ACLOCAL="aclocal -I /usr/local/share/aclocal" sudo autoreconf -if
+    //OR//
+    ACLOCAL="aclocal -I /usr/share/aclocal" sudo autoreconf -if
+    sudo ./configure
+    sudo make
+    sudo make install
+    
+Clone php-zookeeper source and build php extension with phpize
+
+    apt-get install php5-dev
+    sudo git clone git://github.com/andreiz/php-zookeeper.git /usr/share/php-zookeeper
+    cd /usr/share/php-zookeeper
+    git checkout v0.2.1
+    phpize
+    sudo ./configure
+    sudo make
+    sudo make install
+    sudo echo "extension=zookeeper.so" > /etc/php5/cli/conf.d/zookeeper.ini
+    sudo echo "extension=zookeeper.so" > /etc/php5/apache2/conf.d/zookeeper.ini
+    
+Test if it works on cli and restart apache!
+
+    echo '<?php $zoo = new Zookeeper("localhost:2181"); print_r($zoo->getChildren("/"));' | php
+    service apache2 restart

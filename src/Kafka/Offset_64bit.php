@@ -9,25 +9,13 @@
 
 namespace Kafka;
 
-class Offset implements IOffset
+class Offset_64bit extends Offset
 {
     /**
      * the actual integer value of the offset
      * @var int
      */
-    private $int64;
-
-    /**
-     * Creates an instance of an Offset from binary data
-     * @param string $data
-     */
-    public static function createFromData($data)
-    {
-        $offset = new Offset();
-        $return = unpack('Va/Vb', $data);
-        $offset->int64 = $return['a'] + ($return['b'] << 32);
-        return $offset;
-    }
+    protected $int64;
 
     /**
      * Creating new offset can take initial hex value,
@@ -39,6 +27,16 @@ class Offset implements IOffset
     {              
         $this->int64 = intval($fromString);
     }
+
+    /**
+     * Creates an instance of an Offset from binary data
+     * @param string $data
+     */
+    public function setData($data)
+    {
+    	$return = unpack('Na/Nb', $data);
+        $this->int64 = $return['a'] + ($return['b'] << 32);        
+    }    
 
     /**
      * Print me
@@ -54,7 +52,7 @@ class Offset implements IOffset
      */
     public function getData()
     {
-    	$data = pack('V', $this->int64) . pack('V', $this->int64 >> 32);
+    	$data = pack('NN', intval($this->int64),$this->int64 >> 16);
         return $data;
     }
 

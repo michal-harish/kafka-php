@@ -9,25 +9,13 @@
 
 namespace Kafka;
 
-class Offset implements IOffset
+class Offset_32bit extends Offset
 {
     /**
      * the actual byte array of the value
      * @var string[8]
      */
     private $data;
-
-    /**
-     * Creates an instance of an Offset from binary data
-     * @param string $data
-     */
-    public static function createFromData($data)
-    {
-        $offset = new Offset();
-        $offset->data = $data;
-
-        return $offset;
-    }
 
     /**
      * Creating new offset can take initial hex value,
@@ -42,6 +30,17 @@ class Offset implements IOffset
             $this->data = $this->hexdata($fromString);
         }
     }
+
+    /**
+     * Creates an instance of an Offset from binary data
+     * @param string $data
+     */
+    public function setData($data)
+    {
+    	$offset->data = $data;    
+    	return $offset;
+    }
+    
 
     /**
      * Print me

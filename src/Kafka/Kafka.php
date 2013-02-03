@@ -13,14 +13,9 @@
 namespace Kafka;
 
 require_once 'Exception.php';
-require_once 'IOffset.php';
-
-if (TRUE || PHP_INT_SIZE === 8) {
-	require_once 'Offset_64bit.php';
-} elseif (PHP_INT_SIZE === 4) {
-	require_once 'Offset_32bit.php';
-} 
-
+require_once 'Offset.php';
+require_once 'Offset_32bit.php';
+require_once 'Offset_64bit.php'; 
 require_once 'Message.php';
 require_once 'IConsumer.php';
 require_once 'IMetadata.php';

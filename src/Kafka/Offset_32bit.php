@@ -1,23 +1,21 @@
 <?php
 
 /**
- * This class wraps the long format for message offset attributes.
- * PHP supports bigints on 64-bit OS(s) only and PHP 6 has long way to go.
- * Also it maybe be useful in case other formats of offsets are introduced
- * in Kafka.
+ * This class wraps the long format for message offset attributes
+ * for 32bit php installations.
  *
  * @author michal.harish@gmail.com
  */
 
 namespace Kafka;
 
-class Offset
+class Offset implements IOffset
 {
     /**
      * the actual byte array of the value
      * @var string[8]
      */
-    public $data;
+    private $data;
 
     /**
      * Creates an instance of an Offset from binary data
@@ -35,13 +33,13 @@ class Offset
      * Creating new offset can take initial hex value,
      * e.g new Offset("078c88cc700ff")
      *
-     * @param string $hex
+     * @param string $fromString Hexadecimal string
      */
-    public function __construct($hex = null)
+    public function __construct($fromString = null)
     {
         $this->data = str_repeat(chr(0), 8);
-        if ($hex) {
-            $this->data = $this->hexdata($hex);
+        if ($fromString) {
+            $this->data = $this->hexdata($fromString);
         }
     }
 

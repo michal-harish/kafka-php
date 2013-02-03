@@ -13,7 +13,14 @@
 namespace Kafka;
 
 require_once 'Exception.php';
-require_once 'Offset.php';
+require_once 'IOffset.php';
+
+if (TRUE || PHP_INT_SIZE === 8) {
+	require_once 'Offset_64bit.php';
+} elseif (PHP_INT_SIZE === 4) {
+	require_once 'Offset_32bit.php';
+} 
+
 require_once 'Message.php';
 require_once 'IConsumer.php';
 require_once 'IMetadata.php';
@@ -66,7 +73,7 @@ class Kafka
         $timeout = 6,
         $apiVersion = 0.7
     )
-    {
+    {    	
         $this->host = $host;
         $this->port = $port;
         $this->timeout = $timeout;
@@ -74,7 +81,7 @@ class Kafka
         include_once "{$apiImplementation}/ProducerChannel.php";
         $this->producerClass = "\Kafka\\$apiImplementation\ProducerChannel";
         include_once "{$apiImplementation}/ConsumerChannel.php";
-        $this->consumerClass = "\Kafka\\$apiImplementation\ConsumerChannel";
+        $this->consumerClass = "\Kafka\\$apiImplementation\ConsumerChannel";       
     }
 
     /**

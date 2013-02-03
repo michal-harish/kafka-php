@@ -23,11 +23,9 @@ assert((string) $offset2 === "ffffffffffffffff");
 
 //test serialization / deserialization and increment of the offset of 64-bit offset
 if (PHP_INT_SIZE === 8) {
-	$offset32 = new \Kafka\Offset_32bit(dechex("65535"));
+	$offset32 = new \Kafka\Offset_32bit(dechex("4294836225000"));
 	$offset64 = new \Kafka\Offset_64bit();
 	$offset64->setData($offset32->getData());
-	assert((string)$offset64 === "65535");
-	echo "\n";dump($offset32->getData()) ; 
-	echo "\n";dump($offset64->getData()) ;
+	assert((string)$offset64 === "4294836225000");
 	assert($offset32->getData() === $offset64->getData());
 }

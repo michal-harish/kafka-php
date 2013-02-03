@@ -35,7 +35,7 @@ class Offset_64bit extends Offset
     public function setData($data)
     {
     	$return = unpack('Na/Nb', $data);
-        $this->int64 = $return['a'] + ($return['b'] << 32);        
+        $this->int64 = ($return['a'] << 32) + ($return['b']);        
     }    
 
     /**
@@ -52,7 +52,7 @@ class Offset_64bit extends Offset
      */
     public function getData()
     {
-    	$data = pack('NN', intval($this->int64),$this->int64 >> 16);
+	$data = pack('NN', intval($this->int64) >> 32, $this->int64);
         return $data;
     }
 

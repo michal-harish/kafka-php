@@ -24,7 +24,7 @@ class Offset {
 	}
 	
 	public function setData($data) {
-		$this->component->setData();
+		$this->component->setData($data);
 	}
 	
 	public function __toString() {

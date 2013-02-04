@@ -1,10 +1,10 @@
 <?php
 
 /**
- * This class wraps the long format for message offset attributes.
- * PHP supports bigints on 64-bit OS(s) only and PHP 6 has long way to go.
- * Also it maybe be useful in case other formats of offsets are introduced
- * in Kafka.
+ * Offset
+ *
+ * This class wraps the long format for message offset attributes. It abstracts
+ * the offset independently of the long format of the php installation.
  *
  * @author michal.harish@gmail.com
  */
@@ -13,155 +13,56 @@ namespace Kafka;
 
 class Offset
 {
-    /**
-     * the actual byte array of the value
-     * @var string[8]
-     */
-    public $data;
+    private $component;
 
-    /**
-     * Creates an instance of an Offset from binary data
-     * @param string $data
-     */
-    public static function createFromData($data)
+    public function __construct($fromString = null)
     {
-        $offset = new Offset();
-        $offset->data = $data;
-
-        return $offset;
-    }
-
-    /**
-     * Creating new offset can take initial hex value,
-     * e.g new Offset("078c88cc700ff")
-     *
-     * @param string $hex
-     */
-    public function __construct($hex = null)
-    {
-        $this->data = str_repeat(chr(0), 8);
-        if ($hex) {
-            $this->data = $this->hexdata($hex);
+        if (PHP_INT_SIZE === 8) {
+            $this->component = new Offset_64bit($fromString);
+        } elseif (PHP_INT_SIZE === 4) {
+            $this->component = new Offset_32bit($fromString);
         }
     }
 
-    /**
-     * Print me
-     */
+    public function setData($data)
+    {
+        $this->component->setData($data);
+    }
+
     public function __toString()
     {
-        $result = '';
-        for ($i=0; $i < 8; $i++) {
-            $result .= str_pad(
-                dechex(ord($this->data[$i])),
-                2,
-                '0',
-                STR_PAD_LEFT
-            );
-        }
-
-        return $result;
+        return $this->component->__toString();
     }
 
-    /**
-     * Return raw offset data.
-     * @return string[8]
-     */
     public function getData()
     {
-        return $this->data;
+        return $this->component->getData();
     }
 
-    /**
-     * Increment offset by an integer
-     * @param int $value
-     */
     public function addInt($value)
     {
-        $hex = dechex($value);
-        $this->addData($this->hexdata(dechex($value)));
+        $this->component->addInt($value);
     }
 
-    /**
-     * Subtract integer from the offset
-     * @param unknown_type $value
-     */
     public function subInt($value)
     {
-        $hex = dechex($value);
-        $this->subData($this->hexdata(dechex($value)));
+        $this->component->subInt($value);
     }
 
-    /**
-     * Add an offset interval
-     * @param Offset $value
-     */
     public function add(Offset $value)
     {
-        $this->addData($value->data);
+        $this->component->add($value);
     }
 
-    /**
-     * Subtract an offset interval
-     * @param Offset $value
-     */
     public function sub(Offset $value)
     {
-        $this->subData($value->data);
+        $this->component->sub($value);
     }
 
-    /**
-     * Internal parser for hex values
-     * @param  string           $hex
-     * @throws \Kafka\Exception
-     */
-    private function hexdata($hex)
+    public function __clone()
     {
-        $hex = str_pad($hex, 16, '0', STR_PAD_LEFT);
-        $result = str_repeat(chr(0), 8);
-        if (strlen($hex) != 16) {
-            throw new \Kafka\Exception(
-                'Hexadecimal offset cannot have more than 16 digits'
-            );
-        }
-        for ($i=0; $i<8; $i++) {
-            $h = substr($hex, $i * 2, 2);
-            $result[$i] = chr(hexdec($h));
-        }
-
-        return $result;
-    }
-
-    /**
-     * Internal addition that works with raw byte arrays
-     * @param string[8] $add
-     */
-    private function addData($add)
-    {
-        $carry = 0;
-        for ($i=7; $i>=0; $i--) {
-            $dataByte = ord($this->data[$i]);
-            $addByte = ord($add[$i]) + $carry;
-            $resultByte = ($dataByte + $addByte) & 255;
-            $carry = ($dataByte + $addByte) >> 8;
-            $this->data[$i] = chr($resultByte);
+        if ($this->component != null) {
+            $this->component = clone $this->component;
         }
     }
-
-    /**
-     * Internal subtraction that works with raw byte arrays
-     * @param string[8] $add
-     */
-    private function subData($sub)
-    {
-        $carry = 0;
-        for ($i=7; $i>=0; $i--) {
-            $dataByte = ord($this->data[$i]);
-            $subByte = ord($sub[$i]) + $carry;
-            $resultByte = (($dataByte - $subByte) + 256) & 255;
-            $carry = - min($dataByte - $subByte, 0);
-            $this->data[$i] = chr($resultByte);
-        }
-    }
-
 }

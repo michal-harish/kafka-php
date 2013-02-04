@@ -90,7 +90,7 @@ class MessageStream
 
         if ($offset == \Kafka\Kafka::OFFSETS_LATEST) {
             $this->offset = $this->getLargestOffset();
-        } else if ($offset == \Kafka\Kafka::OFFSETS_EARLIEST) {
+        } elseif ($offset == \Kafka\Kafka::OFFSETS_EARLIEST) {
             $this->offset = $this->getSmallestOffset();
         } else {
             throw new \Kafka\Exception(

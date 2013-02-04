@@ -105,11 +105,11 @@ final class ConsumerConnector
     /**
      * Create message streams
      *
-     * @param  String      $topic
-     * @param  Integer     $maxFetchSize
-     * @param  Integer     $offset
-     * @return Array                      Array containing the list of consumer
-     *                                    streams
+     * @param  String  $topic
+     * @param  Integer $maxFetchSize
+     * @param  Integer $offset
+     * @return Array   Array containing the list of consumer
+     *                 streams
      */
     public function createMessageStreams(
         $topic,

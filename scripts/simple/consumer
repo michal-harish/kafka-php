@@ -37,7 +37,7 @@ $broker    = $options["b"];
 $topic     = $options["t"];
 
 if (isset($options["o"])) {
-    $offset = $options["o"];
+    $offset = new \Kafka\Offset($options["o"]);
 }
 
 list($host,$port) = explode(":", $broker);
@@ -73,7 +73,7 @@ if ($offset === NULL || $offset < $offsets[0]) {
 }
 
 // initialize watermark offset
-$watermark = new \Kafka\Offset($offset);
+$watermark = clone $offset;
 
 // fetch request
 $totalProcessed = 0;

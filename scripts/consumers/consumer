@@ -9,17 +9,20 @@
  *. starting from the earliest possible offset until the end.
  *.
  *. Usage: ./scripts/consumers/consumer -c {connector} -t {topic}
+ *.            [-o {output-format}] [-n {num-events}]
  *.
- *.     -c  Connector, set which Zookeeper server you want to connect
- *.     -t  Topic, sets the topic where you want to produce
- *.     -h  Help, will display the help for the script
+ *.     -c      Connector, set which Zookeeper server you want to connect
+ *.     -t      Topic, sets the topic where you want to produce
+ *.     -h      Help, will display the help for the script
+ *.     -o      Output format, select between: json, php
+ *.     -n      Number, show only N events
  *
  * @author      Pau Gay <pau.gay@visualdna.com>
  * @date        2013-01-23
  */
 
 // check script parametrs
-$options = getopt("hc:t:");
+$options = getopt("hc:t:lo:n:");
 
 // require kafka-php library
 require __DIR__ . "/../../src/Kafka/Kafka.php";
@@ -43,13 +46,31 @@ $messageStreams = $cc->createMessageStreams(
     \Kafka\Kafka::OFFSETS_EARLIEST
 );
 
+$count = 0;
 while (true) {
     $fetchCount = 0;
 
     foreach ($messageStreams as $mid => $messageStream) {
         while ($message = $messageStream->nextMessage()) {
             $fetchCount++;
-            echo "{$message->payload()}\n";
+            $count++;
+
+            if (isset($options["o"])
+                && $options["o"] === "json") {
+                echo $message->payload() . "\n";
+            } else if (isset($options["o"])
+                && $options["o"] === "php") {
+                $data = json_decode($message->payload(), TRUE);
+                var_export($data);
+                echo "\n";
+            } else {
+                // just print topic and payload
+                echo "{$message->payload()}\n";
+            }
+
+            if (isset($options["n"]) && $count >= $options["n"]) {
+                exit(0);
+            }
         }
     }
 

@@ -14,6 +14,8 @@ namespace Kafka;
 
 require_once 'Exception.php';
 require_once 'Offset.php';
+require_once 'Offset_32bit.php';
+require_once 'Offset_64bit.php';
 require_once 'Message.php';
 require_once 'IConsumer.php';
 require_once 'IMetadata.php';
@@ -39,8 +41,8 @@ class Kafka
     const COMPRESSION_GZIP = 1;
     const COMPRESSION_SNAPPY = 2;
 
-    const OFFSETS_LATEST = "ffffffffffffffff"; //-1L
-    const OFFSETS_EARLIEST = "fffffffffffffffe"; //-2L
+    const OFFSETS_LATEST = -1;
+    const OFFSETS_EARLIEST = -2;
 
     // connection properties
     private $host;

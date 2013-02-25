@@ -21,6 +21,8 @@
  * @date        2013-01-24
  */
 
+error_reporting(E_ALL | E_STRICT);
+
 // check script parametrs
 $options = getopt("hc:t:lo:n:");
 

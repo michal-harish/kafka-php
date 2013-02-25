@@ -44,6 +44,12 @@ final class ConsumerConnector
     private $groupId;
 
     /**
+     * Process within the consumer group
+     * @var Sting
+     */
+    private $processId;
+
+    /**
      * Create
      *
      * @param String $connectionString
@@ -76,10 +82,11 @@ final class ConsumerConnector
     {
         $this->metadata = $metadata;
         $this->topicMetadata = $this->metadata->getTopicMetadata();
-        $tnhi->groupid = $groupId;
+        $this->groupId = $groupId;
+        $this->processId = gethostname() . "-" . uniqid();
         $this->metadata->registerConsumerProcess(
             $groupId, 
-            gethostname() . "-" . uniqid()
+            $this->processId
         );
     }
 

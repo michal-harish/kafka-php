@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?php
 
+error_reporting(E_ALL | E_STRICT);
+
 set_error_handler(function($errno,$errstr,$file,$line) {
     throw new ErrorException($errstr,$errno,0,$file,$line);
 });

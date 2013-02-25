@@ -183,7 +183,8 @@ class ConsumerChannel
         $this->send($data);
 
         if ($this->hasIncomingData()) {
-            $offsetsLength = array_shift(unpack('N', $this->read(4)));
+            $h = unpack('N', $this->read(4));
+            $offsetsLength = array_shift($h);
             if ($offsetsLength>0) {
                 $offsets = array_fill(0, $offsetsLength, null);
                 for ($i=0; $i<$offsetsLength; $i++) {

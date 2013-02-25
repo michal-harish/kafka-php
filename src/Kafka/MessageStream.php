@@ -88,7 +88,9 @@ class MessageStream
         $this->partition    = $partition;
         $this->maxFetchSize = $maxFetchSize;
 
-        if ($offset == \Kafka\Kafka::OFFSETS_LATEST) {
+        if ($offset instanceof \Kafka\Offset) {
+            $this->offset = $offset;
+        } else if ($offset == \Kafka\Kafka::OFFSETS_LATEST) {
             $this->offset = $this->getLargestOffset();
         } elseif ($offset == \Kafka\Kafka::OFFSETS_EARLIEST) {
             $this->offset = $this->getSmallestOffset();
@@ -96,7 +98,7 @@ class MessageStream
             throw new \Kafka\Exception(
                 "Unrecognized offset, at the moment it only supports "
                 . "'\Kafka\Kafka::OFFSETS_LATEST' or "
-                . "'\Kafka\Kafka::OFFSETS_EARLIEST' constants."
+                . "'\Kafka\Kafka::OFFSETS_EARLIEST' constants or a \Kafka\Offset object."
             );
         }
     }

@@ -26,4 +26,12 @@ interface IMetadata
      * @return boolean
      */
     function needsRefereshing();
+
+
+    /**
+     * @param String $groupid
+     * @param String $processId
+     */
+    function registerConsumerProcess($groupId, $processId);
+
 }

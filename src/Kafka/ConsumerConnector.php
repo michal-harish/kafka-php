@@ -38,6 +38,12 @@ final class ConsumerConnector
     private $topicMetadata = array();
 
     /**
+     * Group this consumer belongs to
+     * @var Sting
+     */
+    private $groupId;
+
+    /**
      * Create
      *
      * @param String $connectionString
@@ -45,6 +51,7 @@ final class ConsumerConnector
      */
     public static function Create(
         $connectionString,
+        $groupId,
         $apiVersion = 0.7
     )
     {
@@ -52,7 +59,8 @@ final class ConsumerConnector
         include_once "{$apiImplementation}/Metadata.php";
         $metadataClass = "\\Kafka\\{$apiImplementation}\\Metadata";
         $connector = new ConsumerConnector(
-            new $metadataClass($connectionString)
+            new $metadataClass($connectionString),
+            $groupId
         );
 
         return $connector;
@@ -62,11 +70,17 @@ final class ConsumerConnector
      * Constructor
      *
      * @param IMetadata $metadata
+     * @param String $groupId
      */
-    protected function __construct(IMetadata $metadata)
+    protected function __construct(IMetadata $metadata, $groupId)
     {
         $this->metadata = $metadata;
         $this->topicMetadata = $this->metadata->getTopicMetadata();
+        $tnhi->groupid = $groupId;
+        $this->metadata->registerConsumerProcess(
+            $groupId, 
+            gethostname() . "-" . uniqid()
+        );
     }
 
     /**
@@ -121,16 +135,18 @@ final class ConsumerConnector
             throw new \Kafka\Exception("Unknown topic `{$topic}`");
         }
         $messageStreams = array();
+        //TODO start rebalance process
         foreach ($this->topicMetadata[$topic] as $virtualPartition) {
             $broker = $this->getKafkaByBrokerId($virtualPartition['broker']);
             $partition = $virtualPartition['partition'];
-            $messageStreams[] = new MessageStream(
+            $stream = new MessageStream(
                 $broker,
                 $topic,
                 $partition,
                 $maxFetchSize,
                 $offset
             );
+            $messageStreams[] = $stream;
         }
 
         return $messageStreams;

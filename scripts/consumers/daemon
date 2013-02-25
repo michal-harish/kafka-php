@@ -37,7 +37,7 @@ $connector = $options["c"];
 $topicFilter = new \Kafka\Whitelist($options["t"]);
 
 // initialize connections
-$consumerConnector = \Kafka\ConsumerConnector::Create($connector);
+$consumerConnector = \Kafka\ConsumerConnector::Create($connector, "php-console-" . gethostname());
 $messageStreams = $consumerConnector->createMessageStreamsByFilter(
     $topicFilter,
     65535

@@ -99,12 +99,58 @@ class Metadata implements \Kafka\IMetadata
     public function brokerWatcher($type, $state, $path) {
         if ($path=="/brokers/ids") {
             $this->brokerMetadata = null;
-            //$this->topicMetadata = null;
         }
     }
 
     public function needsRefereshing() {
         return $this->brokerMetadata === null /*|| $this->topicMetadata === null*/;
+    }
+
+    /**
+     * @param String $groupid
+     * @param String $processId
+     */
+    public function registerConsumerProcess($groupId, $processId) {
+        $this->zkConnect();
+        $path = "/consumers/" . $groupId;
+        if (!$this->zk->exists($path)) $this->createPermaNode($path); 
+        if (!$this->zk->exists("$path/offsets")) $this->createPermaNode("$path/offsets");
+        if (!$this->zk->exists("$path/owners")) $this->createPermaNode("$path/owners");
+        if (!$this->zk->exists("$path/ids")) $this->createPermaNode("$path/ids");
+        if (!$this->zk->exists("$path/ids/$processId")) $this->createEphemeralNode("$path/ids/$processId", "");
+    }
+
+    /**
+     * Create null permanent node helper.
+     * @param String $path
+     */
+    private function createPermaNode($path) {
+        $this->zk->create(
+            $path,
+            null,
+            $params = array(array(
+				'perms'  => \Zookeeper::PERM_ALL,
+				'scheme' => 'world',
+				'id'     => 'anyone',
+            ))
+        );
+    }
+
+    /**
+     * Create null permanent node helper.
+     * @param String $path
+     */
+    private function createEphemeralNode($path, $value) {
+        $this->zk->create(
+            $path,
+            $value,
+            $params = array(array(
+				'perms'  => \Zookeeper::PERM_ALL,
+				'scheme' => 'world',
+				'id'     => 'anyone',
+            )),
+            \Zookeeper::EPHEMERAL
+        );
     }
 
 }

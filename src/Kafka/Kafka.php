@@ -22,6 +22,7 @@ require_once 'IMetadata.php';
 require_once 'IProducer.php';
 require_once 'TopicFilter.php';
 require_once 'ConsumerConnector.php';
+require_once 'ConsumerContext.php';
 require_once 'ProducerConnector.php';
 require_once 'MessageStream.php';
 require_once 'Partitioner.php';

@@ -7,6 +7,8 @@ set_error_handler(function($errno,$errstr,$file,$line) {
     throw new ErrorException($errstr,$errno,0,$file,$line);
 });
 
+class SkippedException extends RuntimeException {}
+
 function dump($data) {
     for($i=0; $i<strlen($data); $i++) {
         echo 'chr('.ord($data[$i]).').';
@@ -18,15 +20,21 @@ echo "\nKafka-PHP Unit Tests\n====================\n";
 try {
 	foreach(
 	   array_merge(
-	       glob(__DIR__. "/tests/*/*.php"),
-	       glob(__DIR__. "/tests/*/*/*.php")
+	       glob(__DIR__. "/tests/Kafka/*.php"),
+	       glob(__DIR__. "/tests/Kafka/*/*.php"),
+	       glob(__DIR__. "/tests/System/*.php")
        ) as $testCase
     )
 	{
 	    $testName = substr($testCase,strlen(__DIR__)+1);
 	    echo "\033[1;37m{$testName}\033[0m";
-		require $testCase;
-		echo " - SUCCESS\n";
+	    try {
+		  require $testCase;
+		  echo " - SUCCESS";
+		} catch ( SkippedException $se) {
+		    echo " -\033[1;1;33m SKIPPED " . $se->getMessage() . "\033[0m";
+		}
+		echo "\n";
 	}
 	echo "\n\033[1;32mSUCCESS\033[0m";
 } catch(Exception $e) {

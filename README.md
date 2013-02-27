@@ -231,11 +231,7 @@ Backlog
 
 Those are the list of pending tasks:
 
- * IN PROGRESS - ConsumerConnector zk watcher and rebalance on nextMessage
- * IN PROGRESS - ConsumerConnector offset management in zk /consumers/<groupid>/offsets/...
- 
- * TODO - Implement ConsumerConnector option for autooffset.reset as per spec.
- * TODO - ConsumerConnector and ProducerConnector shutdown hooks that close all channels as done in bootstrap of vdna-event-producer
+ * IN PROGRESS - ConsumerConnector rebalance prcoess (zk watcher seems to have bugs so probably on nextMessage)
  * TODO - try implementing the new versioned wire format 0.8 and acknowledgements
  * TODO - Snappy compression - could not compile snappy.so on 64-bit :(
  * TODO - detect 64-bit php and replace Kafka_Offset hex for decimal under the hood

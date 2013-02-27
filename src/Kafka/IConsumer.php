@@ -72,4 +72,9 @@ interface IConsumer
         $maxNumOffsets = 2
     );
 
+    /**
+     * 
+     */
+    public function close();
+
 }

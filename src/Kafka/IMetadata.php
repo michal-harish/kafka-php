@@ -34,4 +34,12 @@ interface IMetadata
      */
     function registerConsumerProcess($groupId, $processId);
 
+    /**
+     * @param String $groupId
+     * @param String $topic
+     */
+    function getTopicOffsets($groupId, $topic);
+    
+    function commitOffset($groupId, $topic, $brokerId, $partition, \Kafka\Offset $offset);
+
 }

@@ -13,6 +13,11 @@ namespace Kafka;
 
 class MessageStream
 {
+
+    private $metadata;
+
+    private $groupId;
+
     /**
      * Consumer
      *
@@ -31,6 +36,12 @@ class MessageStream
      * @var String
      */
     private $topic;
+
+    /**
+     * BrokerId
+     * @var String
+     */
+    private $brokerId;
 
     /**
      * Partition
@@ -66,27 +77,41 @@ class MessageStream
      */
     private $hasFetched = false;
 
+    private $hasCommits = false;
+
+    private $lastCommitOffset;
+
     /**
      * Construct
      *
+     * @param IMetadata $metadata 
+     * @param String  $groupId
      * @param Kafka   $kafka
      * @param String  $topic
+     * @param String  $brokerId
      * @param String  $partition
      * @param Integer $maxFetchSize
      * @param Integer $offset
      */
     public function __construct(
-        Kafka $kafka,
+        IMetadata $metadata,
+        $groupId,
+        IConsumer $consumer,
         $topic,
+        $brokerId,
         $partition,
         $maxFetchSize,
         $offset = \Kafka\Kafka::OFFSETS_LATEST
     )
     {
-        $this->consumer     = $kafka->createConsumer();
+        $this->metadata     = $metadata;
+        $this->groupId      = $groupId;
+        $this->consumer     = $consumer;
         $this->topic        = $topic;
+        $this->brokerId     = $brokerId;
         $this->partition    = $partition;
         $this->maxFetchSize = $maxFetchSize;
+        $this->lastCommitOffset = time();
 
         if ($offset instanceof \Kafka\Offset) {
             $this->offset = $offset;
@@ -113,6 +138,10 @@ class MessageStream
      */
     public function nextMessage()
     {
+        if (time() - 10 > $this->lastCommitOffset) {
+            $this->commitOffset();
+        }
+
         if (!$this->hasFetched) {
             $this->hasFetched = $this->consumer->fetch(
                 $this->topic,
@@ -127,6 +156,7 @@ class MessageStream
         }
 
         $message =  $this->consumer->nextMessage();
+        $this->hasCommits = true;
 
         if (!$message) {
             $this->hasFetched = false;
@@ -173,5 +203,24 @@ class MessageStream
         );
 
         return $offsets[0];
+    }
+
+    public function close() {
+        $this->commitOffset();
+        $this->consumer->close();
+    }
+
+    private function commitOffset() {
+        if ($this->hasCommits) {
+            $this->metadata->commitOffset(
+                $this->groupId,
+                $this->topic,
+                $this->brokerId,
+                $this->partition,
+                $this->consumer->getWatermark()
+            );
+            $this->hasCommits = false; 
+        }
+        $this->lastCommitOffset = time();
     }
 }

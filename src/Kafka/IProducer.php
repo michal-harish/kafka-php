@@ -31,4 +31,7 @@ interface IProducer
      */
     public function produce();
 
+
+    public function close();
+
 }

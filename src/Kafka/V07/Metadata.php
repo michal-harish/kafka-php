@@ -43,6 +43,39 @@ class Metadata implements \Kafka\IMetadata
         }
     }
 
+    /**
+     * Create null permanent node helper.
+     * @param String $path
+     */
+    private function createPermaNode($path, $value = null) {
+        $this->zk->create(
+            $path,
+            $value,
+            $params = array(array(
+				'perms'  => \Zookeeper::PERM_ALL,
+				'scheme' => 'world',
+				'id'     => 'anyone',
+            ))
+        );
+    }
+    
+    /**
+     * Create null permanent node helper.
+     * @param String $path
+     */
+    private function createEphemeralNode($path, $value) {
+        $this->zk->create(
+        $path,
+        $value,
+        $params = array(array(
+    				'perms'  => \Zookeeper::PERM_ALL,
+    				'scheme' => 'world',
+    				'id'     => 'anyone',
+        )),
+        \Zookeeper::EPHEMERAL
+        );
+    }
+    
     public function getTopicMetadata()
     {
         $this->zkConnect();
@@ -54,6 +87,7 @@ class Metadata implements \Kafka\IMetadata
                 );
                 for ($p = 0; $p < $partitionCount; $p++) {
                     $topicMetadata[$topic][] = array(
+                        "id" => "{$brokerId}-{$p}",
                         "broker"    => $brokerId,
                         "partition" => $p,
                     );
@@ -112,45 +146,46 @@ class Metadata implements \Kafka\IMetadata
      */
     public function registerConsumerProcess($groupId, $processId) {
         $this->zkConnect();
-        $path = "/consumers/" . $groupId;
-        if (!$this->zk->exists($path)) $this->createPermaNode($path); 
-        if (!$this->zk->exists("$path/offsets")) $this->createPermaNode("$path/offsets");
-        if (!$this->zk->exists("$path/owners")) $this->createPermaNode("$path/owners");
-        if (!$this->zk->exists("$path/ids")) $this->createPermaNode("$path/ids");
-        if (!$this->zk->exists("$path/ids/$processId")) $this->createEphemeralNode("$path/ids/$processId", "");
+        if (!$this->zk->exists("/consumers/{$groupId}")) $this->createPermaNode("/consumers/{$groupId}");
+        //TODO if (!$this->zk->exists("/consumers/{$groupId}/owners")) $this->createPermaNode("/consumers/{$groupId}/owners");
+        if (!$this->zk->exists("/consumers/{$groupId}/ids")) $this->createPermaNode("/consumers/{$groupId}/ids");
+
+        if (!$this->zk->exists("/consumers/{$groupId}/ids/$processId")) {
+            $this->createEphemeralNode("/consumers/{$groupId}/ids/$processId", "");
+        }
     }
 
     /**
-     * Create null permanent node helper.
-     * @param String $path
+     * @param String $groupId
+     * @param String $topic
+     * @return array
      */
-    private function createPermaNode($path) {
-        $this->zk->create(
-            $path,
-            null,
-            $params = array(array(
-				'perms'  => \Zookeeper::PERM_ALL,
-				'scheme' => 'world',
-				'id'     => 'anyone',
-            ))
-        );
+    public function getTopicOffsets($groupId, $topic) {
+        $offsets = array();
+        $this->zkConnect();
+        if (!$this->zk->exists("/consumers/{$groupId}/offsets")) {
+            $this->createPermaNode("/consumers/{$groupId}/offsets");
+        }
+        $path = "/consumers/{$groupId}/offsets/{$topic}";
+        if ($this->zk->exists($path)) {
+            foreach($this->zk->getChildren($path) as $partition) {
+                $offsets[$partition] = new \Kafka\Offset($this->zk->get("{$path}/{$partition}"));
+            }
+        }
+        return $offsets;
     }
 
-    /**
-     * Create null permanent node helper.
-     * @param String $path
-     */
-    private function createEphemeralNode($path, $value) {
-        $this->zk->create(
-            $path,
-            $value,
-            $params = array(array(
-				'perms'  => \Zookeeper::PERM_ALL,
-				'scheme' => 'world',
-				'id'     => 'anyone',
-            )),
-            \Zookeeper::EPHEMERAL
-        );
+    function commitOffset($groupId, $topic, $brokerId, $partition, \Kafka\Offset $offset) {
+        $this->zkConnect();
+        $path = "/consumers/{$groupId}/offsets/{$topic}";
+        if (!$this->zk->exists($path)) {
+            $this->createPermaNode($path);
+        }
+        if (!$this->zk->exists("{$path}/{$brokerId}-{$partition}")) {
+            $this->createPermaNode("{$path}/{$brokerId}-{$partition}", $offset->__toString());
+        } else {
+            $this->zk->set("{$path}/{$brokerId}-{$partition}", $offset->__toString());
+        }
     }
 
 }

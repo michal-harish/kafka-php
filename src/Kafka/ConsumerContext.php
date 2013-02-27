@@ -8,14 +8,14 @@ class ConsumerContext implements \Iterator {
     private $streams = array();
 
     public function __destruct() {
-        $this->closeAllStreams();
+        $this->close();
     }
 
     public function assignStreams(array $streams) {
         $this->streams = $streams;
     }
 
-    public function closeAllStreams() {
+    public function close() {
         foreach($this->streams as $stream) {
             try {
                 $stream->close();

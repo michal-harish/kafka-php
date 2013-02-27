@@ -134,7 +134,7 @@ final class ConsumerConnector
 
     private function startFetching(ConsumerContext $context, array $topics, $maxFetchSize, $offsetReset) {
 
-        $context->closeAllStreams();
+        $context->close();
         $streams = array();
         foreach ($topics as $topic) {
 

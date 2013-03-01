@@ -16,6 +16,7 @@
  *.     -h      Help, will display the help for the script
  *.     -o      Output format, select between: json, php
  *.     -n      Number, show only N events
+ *.     -r      Rewind the stream from beginning
  *
  * @author      Pau Gay <pau.gay@visualdna.com>
  * @date        2013-01-24
@@ -24,7 +25,7 @@
 error_reporting(E_ALL | E_STRICT);
 
 // check script parametrs
-$options = getopt("hc:t:lo:n:");
+$options = getopt("hc:t:lo:n:r");
 
 // require kafka-php library
 require __DIR__ . "/../../src/Kafka/Kafka.php";
@@ -35,6 +36,9 @@ if (!isset($options["c"])
     help();
 }
 
+$offset = \Kafka\Kafka::OFFSETS_LATEST;
+if (isset($options['r'])) $offset = \Kafka\Kafka::OFFSETS_EARLIEST;
+
 $connector = $options["c"];
 $topicFilter = new \Kafka\Whitelist($options["t"]);
 
@@ -42,7 +46,8 @@ $topicFilter = new \Kafka\Whitelist($options["t"]);
 $consumerConnector = \Kafka\ConsumerConnector::Create($connector, "php-console-" . gethostname());
 $messageStreams = $consumerConnector->createMessageStreamsByFilter(
     $topicFilter,
-    65535
+    65535,
+    $offset
 );
 
 $count = 0;
@@ -64,9 +69,8 @@ while (true) {
                 var_export($data);
                 echo "\n";
             } else {
-                // just print topic and payload
-                echo "{$count}. TOPIC=".$message->topic(). " PAYLOAD=";
-                var_dump($message->payload());
+                echo $message->payload();
+                echo "\n";
             }
 
             if (isset($options["n"]) && $count >= $options["n"]) {

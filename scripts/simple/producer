@@ -12,6 +12,7 @@
  *.
  *.     -b  Broker, the Kafka broker where we want to connect
  *.     -t  Topic, sets the topic where you want to produce
+ *.     -p  Partition number
  *.     -h  Help, will display the help for the script
  *
  * @author      Pau Gay <pau.gay@visualdna.com>
@@ -19,7 +20,7 @@
  */
 
 // check script parametrs
-$options = getopt("hb:t:");
+$options = getopt("hb:t:p:");
 
 // require kafka-php library
 require __DIR__ . "/../../src/Kafka/Kafka.php";
@@ -32,6 +33,7 @@ if (!isset($options["b"])
 
 $broker = $options["b"];
 $topic  = $options["t"];
+$partition = isset($options["p"]) ? $options["p"] : 0;
 
 list($host,$port) = explode(":", $options["b"]);
 
@@ -45,36 +47,15 @@ $producer = $kafka->createProducer();
 $producer->add(
     new \Kafka\Message(
         $topic,
-        0,
-        'MESSAGE 1 - passed as uncompressed message object',
+        $partition,
+        'test payload',
         \Kafka\Kafka::COMPRESSION_NONE
-    )
-);
-
-for ($i=2; $i<100; $i++)
-{
-	$producer->add(
-		new \Kafka\Message(
-            $topic,
-            0,
-			"MESSAGE $i - passed as consecutive compressed message object",
-			\Kafka\Kafka::COMPRESSION_GZIP
-		)
-	);
-}
-
-$producer->add(
-    new \Kafka\Message(
-        'test',
-        0,
-        'MESSAGE 100 - passed as compressed message object to a different topic `test`',
-        \Kafka\Kafka::COMPRESSION_GZIP
     )
 );
 
 if ($producer->produce())
 {
-    echo "Published to '$topic'.\n";
+    echo "Published to '$topic':'$partition'.\n";
 }
 
 // go home

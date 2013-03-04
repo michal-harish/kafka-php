@@ -7,9 +7,8 @@
 require_once __DIR__ . "/../../src/Kafka/Kafka.php";
 
 try {
-    $kafka = new \Kafka\Kafka('localhost', 9092, 3, 0.7);
+	global $kafka,$consumer;
     $producer = $kafka->createProducer();
-    $consumer = \Kafka\ConsumerConnector::Create("localhost:2181", "kafka-php-system-test");
     function fetch($streams, $count = null) {
         $messages = array();
         while(true) {

@@ -1,5 +1,10 @@
 #!/usr/bin/php
 <?php
+/*
+ *. Usage: ./test [system_test_host]
+ *.
+ */
+ 
 
 error_reporting(E_ALL | E_STRICT);
 
@@ -15,19 +20,12 @@ function dump($data) {
     }
 }
 
-echo "\nKafka-PHP Unit Tests\n====================\n";
 
-try {
-	foreach(
-	   array_merge(
-	       glob(__DIR__. "/tests/Kafka/*.php"),
-	       glob(__DIR__. "/tests/Kafka/*/*.php"),
-	       glob(__DIR__. "/tests/System/*.php")
-       ) as $testCase
-    )
+function runtests(array $files) {
+	foreach($files as $testCase)
 	{
 	    $testName = substr($testCase,strlen(__DIR__)+1);
-	    echo "\033[1;37m{$testName}\033[0m";
+	    echo "\033[1;35m{$testName}\033[0m";
 	    try {
 		  require $testCase;
 		  echo " - SUCCESS";
@@ -36,6 +34,19 @@ try {
 		}
 		echo "\n";
 	}
+}
+
+try {
+
+	echo "\nKafka-PHP Unit Tests\n====================\n";
+	runtests(array_merge(glob(__DIR__. "/tests/Kafka/*.php"), glob(__DIR__. "/tests/Kafka/*/*.php")));
+	
+	$testHost = isset($_SERVER['argv'][1]) ? $_SERVER['argv'][1] : 'localhost';
+	echo "\nKafka-PHP System Tests ($testHost) \n==========================================\n";
+	$kafka = new \Kafka\Kafka($testHost, 9092, 3, 0.7);
+	$consumer = \Kafka\ConsumerConnector::Create("{$testHost}:2181", "kafka-php-system-test");
+	runtests(array_merge(glob(__DIR__. "/tests/System/*.php")));
+
 	echo "\n\033[1;32mSUCCESS\033[0m";
 } catch(Exception $e) {
 	echo "\033[1;31m";

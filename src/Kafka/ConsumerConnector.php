@@ -3,11 +3,15 @@
 /**
  * Kafka Consumer Connector
  *
- * Consumer Connector is the class that will provide the main methods to
- * access to Kafka messages.
+ * Consumer Connector is the class that provides the main methods to
+ * access to Kafka messages using the high level API.
  *
- * @author     Pau Gay <pau.gay@gmail.com>
- */
+ * @author    Pau Gay <pau.gay@gmail.com>
+ * 
+ * @date      20/02/2013
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+*/
 
 namespace Kafka;
 

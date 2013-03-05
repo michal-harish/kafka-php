@@ -9,7 +9,7 @@ require_once __DIR__ . "/../../src/Kafka/Kafka.php";
 $result = "";
 try {
 
-    $kafka = new \Kafka\Kafka("localhost", 9092);
+	global $kafka;
     $consumer = $kafka->createConsumer();
     //get latest offset
     $offsets = $consumer->offsets("test", 0, \Kafka\Kafka::OFFSETS_LATEST);

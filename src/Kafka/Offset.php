@@ -6,7 +6,8 @@
  * This class wraps the long format for message offset attributes. It abstracts
  * the offset independently of the long format of the php installation.
  *
- * @author michal.harish@gmail.com
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  */
 
 namespace Kafka;

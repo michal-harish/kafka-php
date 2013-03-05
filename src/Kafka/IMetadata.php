@@ -1,4 +1,10 @@
 <?php
+/* 
+ * Metadata interface for accessing brokers, topics and consumer metadata.
+ *
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ */
 
 namespace Kafka;
 

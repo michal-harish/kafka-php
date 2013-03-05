@@ -7,7 +7,8 @@
  * an auto-balanced connection to the cluster of borkers without disrupting the
  * client code.
  *
- * @author michal.harish@gmail.com
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  */
 
 namespace Kafka;

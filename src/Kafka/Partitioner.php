@@ -6,7 +6,8 @@
  * This class can be extended and partition($key, $numPartition) overriden
  * to accept any type of $key and method of partitioning.
  *
- * @author michal.haris@visualdna.com
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  * @date 10/12/2012
  */
 

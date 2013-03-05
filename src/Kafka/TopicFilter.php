@@ -1,9 +1,11 @@
 <?php
 /**
  * Topic Filter for ConsumerConnector
- * There are two implementations
- * @author Michal Harish
  *
+ * There are two implementations: Whitelist and Blacklist.
+ *
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  */
 
 namespace Kafka;

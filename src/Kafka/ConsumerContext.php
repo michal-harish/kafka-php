@@ -1,5 +1,13 @@
 <?php
-
+/**
+ * Consumer Context represents a set of message streams that can be attached
+ * some behaviour collectively. This is mainly for the purpose of implementing
+ * the distributed rebalance algorithm
+ *
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ * @date 20/02/2013
+ */
 
 namespace Kafka;
 

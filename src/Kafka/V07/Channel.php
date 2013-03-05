@@ -5,8 +5,9 @@
  *
  * Generic Kafka 0.7 response-request channel.
  *
- * @author     Michal Haris <michal.harish@gmail.com>
- * @date       2012-11-15
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ * @date      2012-11-15
  */
 
 namespace Kafka\V07;

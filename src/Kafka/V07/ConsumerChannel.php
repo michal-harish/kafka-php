@@ -5,7 +5,8 @@
  *
  * Consumer channel for FetchRequest and OffsetReqeust.
  *
- * @author     Michal Haris <michal.harish@gmail.com>
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  * @date       2012-11-15
  */
 

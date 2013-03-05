@@ -7,7 +7,8 @@
  * Handles format detection from the stream as well as compression/decompression
  * of the payload and crc validation.
  *
- * @author michal.harish@gmail.com
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  */
 
 namespace Kafka;

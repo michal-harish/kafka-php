@@ -13,7 +13,8 @@
  * retreived from zookeeper so that things don't have to be rediscovered at every request, but
  * the application needs to decide how to do the actual caching.
  *
- * @author     Michal Hairsh <michal.harish@gmail.com>
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
  * @date 2012-12-03
  */
 

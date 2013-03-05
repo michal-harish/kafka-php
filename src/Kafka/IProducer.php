@@ -1,13 +1,15 @@
 <?php
 
 /**
- * Interface for any producer.
+ * Interface for a low-level producer.
+ *
  * At this level the Kafka API version is transparent
  * to the client code. Different implementations
  * of this interface are provided for each version of Kafka API.
  *
- * @author michal.harish@gmail.com
- */
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+*/
 
 namespace Kafka;
 

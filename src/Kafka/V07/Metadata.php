@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * IMetadata implementation for 0.7.x Kafka prototcol, e.g.
+ * talking to zookeeper directly.
+ *
+ * @author    Michal Harish <michal.harish@gmail.com>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ */
 namespace Kafka\V07;
 
 use Kafka\Kafka;

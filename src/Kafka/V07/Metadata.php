@@ -106,9 +106,6 @@ class Metadata implements \Kafka\IMetadata
 
     public function getBrokerInfo($brokerId)
     {
-        if (!$brokerId || !is_numeric($brokerId)) {
-            throw new \Kafka\Exception("Invalid brokerId `$brokerId`");
-        }
         $this->getBrokerMetadata();
         if (!isset($this->brokerMetadata[$brokerId])) {
             throw new \Kafka\Exception("Unknown brokerId `$brokerId`");

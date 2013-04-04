@@ -37,7 +37,7 @@ $connector = $options["c"];
 $topic     = $options["t"];
 
 // create the connector
-$cc = \Kafka\ConsumerConnector::Create($connector);
+$cc = \Kafka\ConsumerConnector::Create($connector, "php-consumer-" . gethostname());
 
 // create the message stream
 $messageStreams = $cc->createMessageStreams(

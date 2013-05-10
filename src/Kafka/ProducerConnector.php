@@ -54,20 +54,22 @@ class ProducerConnector
     /**
      * \Kafka\ProducerConnect::CreateCached(...)
      *
-     * @param  unknown_type     $connectionString
-     * @param  unknown_type     $compression
+     * @param  string           $connectionString
+     * @param  int              $compression
      * @param  Partitioner      $partitioner
-     * @param  unknown_type     $apiVersion
+     * @param  float            $apiVersion
+     * @param  int              $connectorTtl = 60
      * @throws \Kafka\Exception
      */
     public static function CreateCached(
         $connectionString,
         $compression = \Kafka\Kafka::COMPRESSION_NONE,
         Partitioner $partitioner = null,
-        $apiVersion = 0.7
+        $apiVersion = 0.7,
+        $connectorTtl = 60
     ) {
         $cacheFile = sys_get_temp_dir() . "/kafka-connector-{$apiVersion}-" . md5(serialize($connectionString));
-        if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > 60) {
+        if (!file_exists($cacheFile) || time() - filemtime($cacheFile) > $connectorTtl) {
             //create new connector and so redisover topics and brokers
             $connector = \Kafka\ProducerConnector::Create($connectionString);
             //and cache for another minute
@@ -85,7 +87,7 @@ class ProducerConnector
 
         return $connector;
     }
-
+    
     private $connectionString;
     private $apiVersion;
     /**

@@ -21,6 +21,14 @@ abstract class TopicFilter
             }
         }
 
+        if (count($resultTopics) === 0) {
+            throw new Exception(
+                "No topics has been selected. "
+                . "Please, choose from the list of available topics: '"
+                . implode(", ", $allTopics) . "'"
+            );
+        }
+
         return $resultTopics;
     }
 
@@ -42,6 +50,18 @@ class Whitelist extends TopicFilter
     protected function topicPassesFilter($topic)
     {
         return preg_match("/^{$this->regex}$/", $topic);
+    }
+}
+
+class TopicList extends TopicFilter
+{
+    public function __construct($topicList)
+    {
+        $this->topicList = array_map('trim', $topicList);
+    }
+    protected function topicPassesFilter($topic)
+    {
+        return in_array($topic, $this->topicList);
     }
 }
 
